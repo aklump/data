@@ -1,0 +1,7 @@
+AKlump\Data\Data
+ [x] Empty subject returns default
+ [x] Path as null throws
+ [x] Path as int works
+ [x] Get arrays simple objects
+ [x] Object with get method
+
