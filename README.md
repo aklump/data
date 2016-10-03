@@ -1,7 +1,7 @@
 # Data
 
 ## Summary
-Provides a common means for getting data from objects or arrays with default option.
+Provides a common means for getting data from objects or arrays with default option as in Lodash (`_.get()`).
 
 ## Rationale
 Given a multidimensional array, in vanilla PHP you will do this:
@@ -57,5 +57,5 @@ This is where a consistent interface approach starts to make sense.  By the way,
     $value === 'c';
 
 ## Acknowledgments
-* Thank you Aaron Jensen (https://github.com/aaronjensen) for introducting me to this concept.
+* Thank you Aaron Jensen (https://github.com/aaronjensen) for introducing me to this concept.
 * https://lodash.com/docs/4.16.2#get

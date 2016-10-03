@@ -21,16 +21,10 @@ class Data implements DataInterface
             return $defaultValue;
         }
 
-        // Convert ints/floats to a string, if possible
-        $path = is_numeric($path) && strval($path) == $path ? strval($path) : $path;
-
-        // Explode strings
-        $path = is_string($path) ? explode($this->pathSeparator, $path) : $path;
-        if (!is_array($path)) {
-            throw new \InvalidArgumentException("\$path must be an array of $this->pathSeparator separated string.");
-        }
+        $this->validate($subject, $path, $defaultValue);
         $key = array_shift($path);
         $base = $subject;
+
         if (is_array($base)) {
             $base = isset($base[$key]) ? $base[$key] : $defaultValue;
         }
@@ -59,6 +53,18 @@ class Data implements DataInterface
         return $this->{$function}($base, implode($this->pathSeparator, $path), $defaultValue);
     }
 
+    protected function validate($subject, &$path, $defaultValue)
+    {
+        // Convert ints/floats to a string, if possible
+        $path = is_numeric($path) && strval($path) == $path ? strval($path) : $path;
+
+        // Explode strings
+        $path = is_string($path) ? explode($this->pathSeparator, $path) : $path;
+        if (!is_array($path)) {
+            throw new \InvalidArgumentException("\$path must be an array of $this->pathSeparator separated string.");
+        }
+    }
+
     /**
      * Return an array of possible methods to call on objects for getting
      * property values.
@@ -67,7 +73,8 @@ class Data implements DataInterface
      * methods other than 'get' for extracting a propery value.
      *
      * By returning an array of methods, it allows this class to support
-     * non-homomogenous objects under a commone banner.
+     * non-homomogenous objects under a commone banner.  The first matched
+     * method on the child will be used, subsequent methods will not be called.
      *
      * @return array
      *   - Keys are the methods to call on the child class
