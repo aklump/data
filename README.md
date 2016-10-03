@@ -1,7 +1,7 @@
 # Data
 
 ## Summary
-Provides a common means for getting data from objects or arrays with default option as in Lodash (`_.get()`).
+Provides a common means for getting data from objects or arrays with default option such as Lodash's get method.
 
 ## Rationale
 Given a multidimensional array, in vanilla PHP you will do this:
@@ -29,7 +29,7 @@ Or when you need to work in Drupal 8 for a few days.
     
     print $data->get($node, 'field_description.1.value', '');
     
-This is where a consistent interface approach starts to make sense.  By the way, there is a drupal module that uses a different implementation of this class which can be found here:
+This is where a consistent interface approach starts to make sense.  By the way, there is a Drupal module that uses a different implementation of this class which can be found [here](https://www.drupal.org/project/data_api).
 
 ## Details
     <?php
