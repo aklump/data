@@ -7,6 +7,26 @@ namespace AKlump\Data;
  */
 class DataTest extends \PHPUnit_Framework_TestCase
 {
+
+    public function testCallbackMultidimensional()
+    {
+        $value = array('do' => array('re' => array('mi' => 'fa')));
+        $this->assertSame('Value is fa', $this->data->get($value, 'do.re.mi', null, function ($value) {
+            return 'Value is ' . $value;
+        }));
+    }
+
+    public function testCallback()
+    {
+        $value = array(9, 6);
+        $callback = function ($value, $defaultValue) {
+            return $value === $defaultValue ? $value : 2 * $value;
+        };
+        $this->assertSame(18, $this->data->get($value, 0, 5, $callback));
+        $this->assertSame(12, $this->data->get($value, 1, 5, $callback));
+        $this->assertSame(5, $this->data->get($value, 2, 5, $callback));
+    }
+
     public function testEmptySubjectReturnsDefault()
     {
         $this->assertSame('pepperoni', $this->data->get(array(), null, 'pepperoni'));

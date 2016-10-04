@@ -31,6 +31,18 @@ Or when you need to work in Drupal 8 for a few days.
     
 This is where a consistent interface approach starts to make sense.  By the way, there is a Drupal module that uses a different implementation of this class which can be found [here](https://www.drupal.org/project/data_api).
 
+## Default value
+Every call to ::get can have a default value, which removes the need for if/thens or issets.
+    
+    $country = $data->get($record, 'home.address.country', 'U.S.');
+
+## Callback
+You can pass a callback to process the value such as loading a record by id.
+
+    $url = $data->get($record, 'picture.id', 'http://mysite.com/default.jpg', function($id) {
+        return load_url_by_record_id($id);
+    });
+
 ## Details
     <?php
     use AKlump\Data\Data;

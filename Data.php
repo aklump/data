@@ -15,7 +15,7 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function get($subject, $path, $defaultValue = null)
+    public function get($subject, $path, $defaultValue = null, $valueCallback = null)
     {
         if (empty($subject)) {
             return $defaultValue;
@@ -46,11 +46,11 @@ class Data implements DataInterface
             }
         }
         if (count($path) === 0) {
-            return $base;
+            return $this->postGet($base, $defaultValue, $valueCallback);
         }
         $function = __FUNCTION__;
 
-        return $this->{$function}($base, implode($this->pathSeparator, $path), $defaultValue);
+        return $this->{$function}($base, implode($this->pathSeparator, $path), $defaultValue, $valueCallback);
     }
 
     protected function validate($subject, &$path, $defaultValue)
@@ -88,5 +88,23 @@ class Data implements DataInterface
                 return $childObject->get($property, $defaultValue);
             },
         );
+    }
+
+    /**
+     * Post process the get method.
+     *
+     * @param mixed    $value The discovered value, or default.
+     * @param mixed    $defaultValue
+     * @param Callable $valueCallback
+     *
+     * @return mixed
+     */
+    protected function postGet($value, $defaultValue, $valueCallback)
+    {
+        if (is_callable($valueCallback)) {
+            $value = $valueCallback($value, $defaultValue);
+        }
+
+        return $value;
     }
 }
