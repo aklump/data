@@ -7,6 +7,14 @@ namespace AKlump\Data;
  */
 class DataTest extends \PHPUnit_Framework_TestCase
 {
+    public function testCallbackFiredWhenSubjectIsEmpty()
+    {
+        $called = false;
+        $this->data->get(null, 'do.re.mi', 'default', function ($value) use (&$called) {
+            $called = true;
+        });
+        $this->assertTrue($called);
+    }
 
     public function testCallbackMultidimensional()
     {

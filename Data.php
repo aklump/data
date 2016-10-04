@@ -18,7 +18,7 @@ class Data implements DataInterface
     public function get($subject, $path, $defaultValue = null, $valueCallback = null)
     {
         if (empty($subject)) {
-            return $defaultValue;
+            return $this->postGet($defaultValue, $defaultValue, $valueCallback);
         }
 
         $this->validate($subject, $path, $defaultValue);
