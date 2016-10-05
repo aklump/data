@@ -8,6 +8,15 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testSetObjectWithArrayTemplates()
+    {
+        $object = new \stdClass;
+        $this->data->set($object, 'do.re.mi', 'fa', array());
+        $this->assertInternalType('array', $object->do);
+        $this->assertInternalType('array', $object->do['re']);
+        $this->assertInternalType('string', $object->do['re']['mi']);
+    }
+
     public function testSetObject()
     {
         $object = new \stdClass;
