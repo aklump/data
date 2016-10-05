@@ -15,6 +15,55 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
+    public function set(&$subject, $path, $value, $childTemplate = null)
+    {
+        $this->validate($subject, $path);
+
+        // Establish the childTemplate on first pass.
+        if (is_null($childTemplate)) {
+            if (is_array($subject)) {
+                $childTemplate = array();
+            }
+            elseif (is_object($subject)) {
+                $childTemplate = get_class($subject);
+                $childTemplate = new $childTemplate;
+            }
+        }
+
+        $key = array_shift($path);
+        if (is_array($subject)) {
+            $subject[$key] = isset($subject[$key]) ? $subject[$key] : $childTemplate;
+            $next = &$subject[$key];
+        }
+        elseif (is_object($subject)) {
+            $subject->{$key} = isset($subject->{$key}) ? $subject->{$key} : clone $childTemplate;
+            $next = &$subject->{$key};
+        }
+
+        if (empty($path)) {
+            $next = $value;
+
+            return $this;
+        }
+
+        return $this->set($next, $path, $value, $childTemplate);
+    }
+
+    protected function validate($subject, &$path)
+    {
+        // Convert ints/floats to a string, if possible
+        $path = is_numeric($path) && strval($path) == $path ? strval($path) : $path;
+
+        // Explode strings
+        $path = is_string($path) ? explode($this->pathSeparator, $path) : $path;
+        if (!is_array($path)) {
+            throw new \InvalidArgumentException("\$path must be an array of $this->pathSeparator separated string.");
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function get($subject, $path, $defaultValue = null, $valueCallback = null)
     {
         if (empty($subject)) {
@@ -53,16 +102,22 @@ class Data implements DataInterface
         return $this->{$function}($base, implode($this->pathSeparator, $path), $defaultValue, $valueCallback);
     }
 
-    protected function validate($subject, &$path, $defaultValue)
+    /**
+     * Post process the get method.
+     *
+     * @param mixed    $value The discovered value, or default.
+     * @param mixed    $defaultValue
+     * @param Callable $valueCallback
+     *
+     * @return mixed
+     */
+    protected function postGet($value, $defaultValue, $valueCallback)
     {
-        // Convert ints/floats to a string, if possible
-        $path = is_numeric($path) && strval($path) == $path ? strval($path) : $path;
-
-        // Explode strings
-        $path = is_string($path) ? explode($this->pathSeparator, $path) : $path;
-        if (!is_array($path)) {
-            throw new \InvalidArgumentException("\$path must be an array of $this->pathSeparator separated string.");
+        if (is_callable($valueCallback)) {
+            $value = $valueCallback($value, $defaultValue);
         }
+
+        return $value;
     }
 
     /**
@@ -88,23 +143,5 @@ class Data implements DataInterface
                 return $childObject->get($property, $defaultValue);
             },
         );
-    }
-
-    /**
-     * Post process the get method.
-     *
-     * @param mixed    $value The discovered value, or default.
-     * @param mixed    $defaultValue
-     * @param Callable $valueCallback
-     *
-     * @return mixed
-     */
-    protected function postGet($value, $defaultValue, $valueCallback)
-    {
-        if (is_callable($valueCallback)) {
-            $value = $valueCallback($value, $defaultValue);
-        }
-
-        return $value;
     }
 }

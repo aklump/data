@@ -7,6 +7,35 @@ namespace AKlump\Data;
  */
 class DataTest extends \PHPUnit_Framework_TestCase
 {
+
+    public function testSetObject()
+    {
+        $object = new \stdClass;
+        $result = $this->data->set($object, 'do.re.mi', 'fa');
+        $this->assertSame($this->data, $result);
+        $this->assertSame('fa', $object->do->re->mi);
+    }
+
+    public function testSetArrayWithTemplate()
+    {
+        $array = array();
+        $result = $this->data->set($array, 'do.re.mi', 'fa', array('#type' => 'value'));
+        $this->assertSame($this->data, $result);
+        $this->assertSame(array(
+            '#type' => 'value',
+            'mi'    => 'fa',
+        ), $array['do']['re']);
+        $this->assertSame('fa', $array['do']['re']['mi']);
+    }
+
+    public function testSetArray()
+    {
+        $array = array();
+        $result = $this->data->set($array, 'do.re.mi', 'fa');
+        $this->assertSame($this->data, $result);
+        $this->assertSame('fa', $array['do']['re']['mi']);
+    }
+
     public function testCallbackFiredWhenSubjectIsEmpty()
     {
         $called = false;
