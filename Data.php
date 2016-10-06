@@ -13,10 +13,23 @@ class Data implements DataInterface
     protected $pathSeparator = '.';
 
     /**
+     * May be used to track internal data for recursive processing.
+     *
+     * @var array
+     */
+    protected $cache = array(
+        'set'      => array(),
+        'get'      => array(),
+        'validate' => array(),
+    );
+
+    /**
      * @inheritdoc
      */
     public function get($subject, $path, $defaultValue = null, $valueCallback = null)
     {
+        $this->cacheSet(__FUNCTION__, $subject, $path, $defaultValue, $valueCallback);
+
         if (empty($subject)) {
             return $this->postGet($defaultValue, $defaultValue, $valueCallback);
         }
@@ -53,6 +66,14 @@ class Data implements DataInterface
         return $this->{$function}($base, implode($this->pathSeparator, $path), $defaultValue, $valueCallback);
     }
 
+    protected function cacheSet($op)
+    {
+        $args = func_get_args();
+        array_shift($args);
+        $this->cache[$op]['args'] = isset($this->cache[$op]['args']) ? $this->cache[$op]['args'] : $args;
+        $this->cache[$op]['level'] = isset($this->cache[$op]['level']) ? ++$this->cache[$op]['level'] : 0;
+    }
+
     /**
      * Post process the get method.
      *
@@ -67,8 +88,43 @@ class Data implements DataInterface
         if (is_callable($valueCallback)) {
             $value = $valueCallback($value, $defaultValue);
         }
+        $this->cacheClear('get', 'validate');
 
         return $value;
+    }
+
+    /**
+     * Clear internal caches by key.
+     *
+     * @param... a list of keys to clear.
+     *
+     * @return $this
+     */
+    protected function cacheClear()
+    {
+        $keys = func_get_args();
+        foreach ($keys as $key) {
+            unset($this->cache[$key]);
+        }
+
+        return $this;
+    }
+
+    protected function validate($subject, &$path)
+    {
+        $this->cacheSet(__FUNCTION__, $subject, $path);
+        if (empty($this->cache['validate']['validated'])) {
+            // Convert ints/floats to a string, if possible
+            $path = is_numeric($path) && strval($path) == $path ? strval($path) : $path;
+
+            // Explode strings
+            $path = is_string($path) ? explode($this->pathSeparator, $path) : $path;
+            if (!is_array($path)) {
+                throw new \InvalidArgumentException("\$path must be an array of $this->pathSeparator separated string.");
+            }
+        }
+
+        return $this;
     }
 
     /**
@@ -101,6 +157,7 @@ class Data implements DataInterface
      */
     public function set(&$subject, $path, $value, $childTemplate = null)
     {
+        $this->cacheSet(__FUNCTION__, $subject, $path, $value, $childTemplate);
         $this->validate($subject, $path);
 
         // Establish the childTemplate on first pass.
@@ -129,21 +186,11 @@ class Data implements DataInterface
         if (empty($path)) {
             $next = $value;
 
+            $this->cacheClear('set', 'validate');
+
             return $this;
         }
 
         return $this->set($next, $path, $value, $childTemplate);
-    }
-
-    protected function validate($subject, &$path)
-    {
-        // Convert ints/floats to a string, if possible
-        $path = is_numeric($path) && strval($path) == $path ? strval($path) : $path;
-
-        // Explode strings
-        $path = is_string($path) ? explode($this->pathSeparator, $path) : $path;
-        if (!is_array($path)) {
-            throw new \InvalidArgumentException("\$path must be an array of $this->pathSeparator separated string.");
-        }
     }
 }
