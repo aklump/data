@@ -8,6 +8,63 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    /**
+     * Provides data for testEnsure.
+     */
+    function DataForTestEnsureProvider()
+    {
+        // path, existing, default value, control
+        $tests = array();
+        $tests[] = array(
+            'page.page_top',
+            array(),
+            array(),
+            array('page' => array('page_top' => array())),
+        );
+        $tests[] = array(
+            'do',
+            array('do' => 're'),
+            'mi',
+            array('do' => 're'),
+        );
+        $tests[] = array(
+            'do',
+            array(),
+            'mi',
+            array('do' => 'mi'),
+        );
+        $tests[] = array(
+            'do',
+            array('do' => ''),
+            'mi',
+            array('do' => ''),
+        );
+        $tests[] = array(
+            'do.re',
+            array('do' => array()),
+            'mi',
+            array('do' => array('re' => 'mi')),
+        );
+        $tests[] = array(
+            'do',
+            (object) array('do' => ''),
+            'mi',
+            (object) array('do' => ''),
+        );
+
+        return $tests;
+    }
+
+    /**
+     * @dataProvider DataForTestEnsureProvider
+     */
+    public function testEnsure($path, $subject, $default, $control)
+    {
+        $return = $this->data->ensure($subject, $path, $default);
+        $this->assertSame((array) $control, (array) $subject);
+        $this->assertInstanceOf('AKlump\Data\DataInterface', $return);
+    }
+
     public function testSetObjectWithArrayTemplates()
     {
         $object = new \stdClass;

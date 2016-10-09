@@ -47,4 +47,31 @@ interface DataInterface
      * @return $this|\AKlump\Data\Data
      */
     public function set(&$subject, $path, $value, $childTemplate = null);
+
+    /**
+     * Ensure that a variable path exists, by creating a default value at $path
+     * if the $path doesn't already exist.
+     *
+     * @param array|object $subject       The base subject.
+     * @param string       $path
+     * @param mixed        $default       The value to set, if the item doesn't
+     *                                    already exist.
+     * @param null|mixed   $childTemplate If an child element must be created
+     *                                    to
+     *                                    establish $path, you may pass the
+     *                                    default value of a child here.  You
+     *                                    may leave this null if your $subject
+     *                                    is either an array or a stdClass
+     *                                    object as these are auto-detected.
+     *                                    If you have a class that does not use
+     *                                    constructor arguments, then you may
+     *                                    also leave this set to null.
+     *                                    Finally, if $subject is a class that
+     *                                    needs constructor arguments, then you
+     *                                    can pass a template object, which
+     *                                    will be cloned.
+     *
+     * @return $this
+     */
+    public function ensure(&$subject, $path, $default, $childTemplate = null);
 }

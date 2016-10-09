@@ -193,4 +193,15 @@ class Data implements DataInterface
 
         return $this->set($next, $path, $value, $childTemplate);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function ensure(&$subject, $path, $default, $childTemplate = null)
+    {
+        $value = $this->get($subject, $path, $default);
+        $this->set($subject, $path, $value, $childTemplate);
+
+        return $this;
+    }
 }
