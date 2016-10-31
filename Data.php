@@ -120,44 +120,12 @@ class Data implements DataInterface
     }
 
     /**
-     *
-     * Fill in a value if the current value has no value.
-     *
-     * If $value is string, it will be replaced if the current value is '' or
-     * the key does not exist. If $value is numeric, it will be replaced if the
-     * current value is 0. In other words if the current value is empty AND the
-     * same variable type as value, it will be replaced with $value.
-     *
-     * For more control you can use the $test callable, which receives the
-     * current $value and must return true if the replacement should occur.
-     *
-     * $test...
-     *
-     * built-in strings:
-     *      - 'empty' Will only replace it if the current value is empty based
-     *      on php's empty() construct.
-     *      - 'not_exists' Will only replace it if the final path element does
-     *      not exist as an array key or an object property as figured by
-     *      array_key_exists() or property_exists.
-     *
-     * callable:
-     *      You may pass a callable, which receives ($currentValue, $value,
-     *      $exists) must also return true to affect a replacement.
-     *      $currentValue is based on $subject and $path.  $exists will be true
-     *      if the final key or property of the path exists.
-     *
-     * @param array|object $subject The base subject.
-     * @param string       $path
-     * @param mixed        $value   The value to set.
-     * @param mixed        $test    See notes above.
-     * @param null         $childTemplate
-     *
-     * @return $this
+     * @inheritdoc
      */
-    public function fill(&$subject, $path, $replace, $test = null, $childTemplate = null)
+    public function fill(&$subject, $path, $value, $test = null, $childTemplate = null)
     {
-        // Figure out what an empty value is based on type of $replace.
-        $type = gettype($replace);
+        // Figure out what an empty value is based on type of $value.
+        $type = gettype($value);
         $empty = null;
         settype($empty, $type);
 
@@ -191,7 +159,7 @@ class Data implements DataInterface
 
         // Custom 'array_key_exists', 'property_exists'
         elseif ($test === 'not_exists') {
-            $test = function ($current, $replace, $exists) {
+            $test = function ($current, $value, $exists) {
                 return !$exists;
             };
         }
@@ -222,8 +190,8 @@ class Data implements DataInterface
             $current = $this->get($subject, $path, $empty);
         }
 
-        if ($test($current, $replace, $exists)) {
-            $this->set($subject, $path, $replace, $childTemplate);
+        if ($test($current, $value, $exists)) {
+            $this->set($subject, $path, $value, $childTemplate);
         }
 
         return $this;
@@ -233,7 +201,6 @@ class Data implements DataInterface
      * Removes $count elements from $path, right to left
      *
      * @param string|array &$path
-     * @param int          $count
      *
      * @return mixed
      */

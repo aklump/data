@@ -74,4 +74,53 @@ interface DataInterface
      * @return $this
      */
     public function ensure(&$subject, $path, $default, $childTemplate = null);
+
+    /**
+     *
+     * Fill in a value if the current value has no value (or other test).
+     *
+     * This differs from Data::set() in that it will get(), test the value, and
+     * set() in one step.
+     *
+     * This differs from Data::ensure() in that Data::ensure() will never
+     * overwrite an existing value.  This method may.
+     *
+     * THINK OF THIS AS A CONDITIONAL SET() METHOD.
+     *
+     * If $value is string, it will be replaced if the current value is '' or
+     * the key does not exist. If $value is numeric, it will be replaced if the
+     * current value is 0. In other words if the current value is empty AND the
+     * same variable type as value, it will be replaced with $value.
+     *
+     * For more control you can use the $test callable, which receives the
+     * current $value and must return true if the replacement should occur.
+     *
+     * $test...
+     *
+     * The default test is to check if the current value is both empty and the
+     * same type as $replace.  If both are true, then the value will be
+     * replaced.
+     *
+     * built-in strings:
+     *      - 'empty' Will only replace it if the current value is empty based
+     *      on php's empty() construct.
+     *      - 'not_exists' Will only replace it if the final path element does
+     *      not exist as an array key or an object property as figured by
+     *      array_key_exists() or property_exists.
+     *
+     * callable:
+     *      You may pass a callable, which receives ($currentValue, $value,
+     *      $exists) must also return true to affect a replacement.
+     *      $currentValue is based on $subject and $path.  $exists will be true
+     *      if the final key or property of the path exists.
+     *
+     * @param array|object $subject The base subject.
+     * @param string       $path
+     * @param mixed        $value The value to set.
+     * @param mixed        $test    See notes above.
+     * @param null         $childTemplate
+     *
+     * @return $this
+     */
+    public function fill(&$subject, $path, $value, $test = null, $childTemplate = null);
 }
