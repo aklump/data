@@ -130,15 +130,10 @@ class Data implements DataInterface
         settype($empty, $type);
 
         // Our default test is based on variable type.
-
-        if (is_null($test)) {
-            $test = function ($current) use ($empty) {
-                return $current === $empty;
-            };
-        }
+        $test = is_null($test) ? 'empty' : $test;
 
         // Basic language constructs
-        elseif (in_array($test, array('empty', 'is_null'))) {
+        if (is_string($test)) {
             switch ($test) {
                 case 'empty':
                     $test = function ($current) {
@@ -150,18 +145,23 @@ class Data implements DataInterface
                         return is_null($current);
                     };
                     break;
+                // empty plus type comparison
+                case 'strict':
+                    $test = function ($current) use ($empty) {
+                        return $current === $empty;
+                    };
+                    break;
+                // Custom 'array_key_exists', 'property_exists'
+                case 'not_exists':
+                    $test = function ($current, $exists, $value) {
+                        return !$exists;
+                    };
+                    break;
             }
         }
 
-        elseif (is_callable($test)) {
-            // do nothing, but let's not keep iffing, either.
-        }
-
-        // Custom 'array_key_exists', 'property_exists'
-        elseif ($test === 'not_exists') {
-            $test = function ($current, $value, $exists) {
-                return !$exists;
-            };
+        if (!is_callable($test)) {
+            throw new \InvalidArgumentException("\$test must be a callable, null or predefined string.");
         }
 
         $ancestry = $path;
@@ -190,7 +190,7 @@ class Data implements DataInterface
             $current = $this->get($subject, $path, $empty);
         }
 
-        if ($test($current, $value, $exists)) {
+        if ($test($current, $exists, $value)) {
             $this->set($subject, $path, $value, $childTemplate);
         }
 

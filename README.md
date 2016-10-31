@@ -1,7 +1,7 @@
 # Data
 
 ## Summary
-Provides a common means for getting data from objects or arrays with default option such as Lodash's get method.
+Provides a common means for getting data from objects or arrays with default option such as Lodash's get method.  Other methods for working with array/object data will be added in time.
 
 ## Rationale
 Given a multidimensional array, in vanilla PHP you will do this:
@@ -68,8 +68,14 @@ You can pass a callback to process the value such as loading a record by id.
     $value = $data->get($a, 'b.c', 'e');
     $value === 'c';
 
+## Data::set()
+Unconditionally sets a value at path.
+
+## Data::ensure()
+Ensures that a path is set, does not overwrite if the key/property exists.
+
 ## Data::fill()
-This method will fill in only if a path is empty.  By default the test for empty is based on the the type of the replacement value, and will only be replaced in such circumstance.
+This is a conditional setter method.  It will fill in only if a path is empty (or based on some other test see example 3).
 
 ### Example 1
     <?php
@@ -77,26 +83,27 @@ This method will fill in only if a path is empty.  By default the test for empty
     $array = array('do' => '');
     $data->fill($array, 'do', 're');
     
-    // The value is filled in because 're' is a string and the current value is an empty string ''.
+    // The value is filled in because the current value is empty.
     $array === array('do' => 're');
-    
     
 ### Example 2
     <?php
     // In this case the value is NOT.
     $array = array('do' => null);
-    $data->fill($array, 'do', 're');
+    $data->fill($array, 'do', 're', 'strict');
     
-    // The old value of null remains because 're' is a string and the current value not a string; even though it's empty, it will not be replaced.
-    $array === array('do' => null);
-    
+    // The old value of null remains because 're' is a string and the current value not a string; even though it's empty, it will not be replaced because we've used the 'strict' test.
+    $array === array('do' => null); 
+      
 ### Example 3
     <?php
-    // If you merely want to check if the current value is empty then you should pass the fourth param 'empty'.
-    $array = array('do' => null);
-    $data->fill($array, 'do', 're', 'empty');
+    // In this case the value is replaced based on a callback.
+    $array = array('do' => 45);
+    $data->fill($array, 'do', 're', function ($current, $exists) {
+        return $exists && is_numeric($current);
+    });
     
-    // This time it was replaced because we're only testing if the current value is 'empty'
+    // The value is replaced because our custom callable tested it as a number and returned true.
     $array === array('do' => 're');
 
 ## Acknowledgments

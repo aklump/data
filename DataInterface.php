@@ -103,7 +103,8 @@ interface DataInterface
      *
      * built-in strings:
      *      - 'empty' Will only replace it if the current value is empty based
-     *      on php's empty() construct.
+     *      on php's empty() construct.  This is the default.
+     *      - 'strict' Will only replace if empty and same type as $value.
      *      - 'not_exists' Will only replace it if the final path element does
      *      not exist as an array key or an object property as figured by
      *      array_key_exists() or property_exists.
@@ -116,7 +117,7 @@ interface DataInterface
      *
      * @param array|object $subject The base subject.
      * @param string       $path
-     * @param mixed        $value The value to set.
+     * @param mixed        $value   The value to set.
      * @param mixed        $test    See notes above.
      * @param null         $childTemplate
      *

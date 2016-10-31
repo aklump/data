@@ -9,6 +9,15 @@ class DataTest extends \PHPUnit_Framework_TestCase
 {
 
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidTestThrows()
+    {
+        $subject = (object) array('do' => null);
+        $this->data->fill($subject, 'do', 're', 'bogus');
+    }
+
     public function testFillWithObject()
     {
         $subject = (object) array('do' => null);
@@ -32,6 +41,50 @@ class DataTest extends \PHPUnit_Framework_TestCase
     function DataForTestFillProvider()
     {
         $tests = array();
+        $tests[] = array(
+            'href',
+            array('href' => 'hat'),
+            4,
+            array('href' => 'hat'),
+            function ($current, $exists, &$value) {
+                if ($exists && is_numeric($current)) {
+                    $value *= 2;
+
+                    return true;
+                }
+
+                return false;
+            },
+        );
+        $tests[] = array(
+            'href',
+            array('href' => 5),
+            4,
+            array('href' => 8),
+            function ($current, $exists, &$value) {
+                if ($exists && is_numeric($current)) {
+                    $value *= 2;
+
+                    return true;
+                }
+
+                return false;
+            },
+        );
+        $tests[] = array(
+            'href',
+            array('href' => null),
+            'javascript:void(0)',
+            array('href' => null),
+            'strict',
+        );
+        $tests[] = array(
+            'href',
+            array('href' => ''),
+            'javascript:void(0)',
+            array('href' => 'javascript:void(0)'),
+            'strict',
+        );
         $tests[] = array(
             'href',
             array('href' => null),
