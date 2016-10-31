@@ -66,6 +66,187 @@ class Data implements DataInterface
         return $this->{$function}($base, implode($this->pathSeparator, $path), $defaultValue, $valueCallback);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function set(&$subject, $path, $value, $childTemplate = null)
+    {
+        $this->cacheSet(__FUNCTION__, $subject, $path, $value, $childTemplate);
+        $this->validate($subject, $path);
+
+        // Establish the childTemplate on first pass.
+        if (is_null($childTemplate)) {
+            if (is_array($subject)) {
+                $childTemplate = array();
+            }
+            elseif (is_object($subject)) {
+                $childTemplate = get_class($subject);
+                $childTemplate = new $childTemplate;
+            }
+        }
+
+        $childTemplate = is_object($childTemplate) ? clone $childTemplate : $childTemplate;
+
+        $key = array_shift($path);
+        if (is_array($subject)) {
+            $subject[$key] = isset($subject[$key]) ? $subject[$key] : $childTemplate;
+            $next = &$subject[$key];
+        }
+        elseif (is_object($subject)) {
+            $subject->{$key} = isset($subject->{$key}) ? $subject->{$key} : $childTemplate;
+            $next = &$subject->{$key};
+        }
+
+        if (empty($path)) {
+            $next = $value;
+
+            $this->cacheClear('set', 'validate');
+
+            return $this;
+        }
+
+        return $this->set($next, $path, $value, $childTemplate);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function ensure(&$subject, $path, $default, $childTemplate = null)
+    {
+        $value = $this->get($subject, $path, $default);
+        $this->set($subject, $path, $value, $childTemplate);
+
+        return $this;
+    }
+
+    /**
+     *
+     * Fill in a value if the current value has no value.
+     *
+     * If $value is string, it will be replaced if the current value is '' or
+     * the key does not exist. If $value is numeric, it will be replaced if the
+     * current value is 0. In other words if the current value is empty AND the
+     * same variable type as value, it will be replaced with $value.
+     *
+     * For more control you can use the $test callable, which receives the
+     * current $value and must return true if the replacement should occur.
+     *
+     * $test...
+     *
+     * built-in strings:
+     *      - 'empty' Will only replace it if the current value is empty based
+     *      on php's empty() construct.
+     *      - 'not_exists' Will only replace it if the final path element does
+     *      not exist as an array key or an object property as figured by
+     *      array_key_exists() or property_exists.
+     *
+     * callable:
+     *      You may pass a callable, which receives ($currentValue, $value,
+     *      $exists) must also return true to affect a replacement.
+     *      $currentValue is based on $subject and $path.  $exists will be true
+     *      if the final key or property of the path exists.
+     *
+     * @param array|object $subject The base subject.
+     * @param string       $path
+     * @param mixed        $value   The value to set.
+     * @param mixed        $test    See notes above.
+     * @param null         $childTemplate
+     *
+     * @return $this
+     */
+    public function fill(&$subject, $path, $replace, $test = null, $childTemplate = null)
+    {
+        // Figure out what an empty value is based on type of $replace.
+        $type = gettype($replace);
+        $empty = null;
+        settype($empty, $type);
+
+        // Our default test is based on variable type.
+
+        if (is_null($test)) {
+            $test = function ($current) use ($empty) {
+                return $current === $empty;
+            };
+        }
+
+        // Basic language constructs
+        elseif (in_array($test, array('empty', 'is_null'))) {
+            switch ($test) {
+                case 'empty':
+                    $test = function ($current) {
+                        return empty($current);
+                    };
+                    break;
+                case 'is_null':
+                    $test = function ($current) {
+                        return is_null($current);
+                    };
+                    break;
+            }
+        }
+
+        elseif (is_callable($test)) {
+            // do nothing, but let's not keep iffing, either.
+        }
+
+        // Custom 'array_key_exists', 'property_exists'
+        elseif ($test === 'not_exists') {
+            $test = function ($current, $replace, $exists) {
+                return !$exists;
+            };
+        }
+
+        $ancestry = $path;
+        $key = $this->pathPop($ancestry);
+        if (empty($ancestry)) {
+            $parent = $subject;
+        }
+        else {
+            $type = gettype($subject);
+            $empty_subject = null;
+            settype($empty_subject, $type);
+            $parent = $this->get($subject, $ancestry, $empty_subject);
+        }
+
+        // Determine if the path exists or not.
+        $exists = false;
+        if (is_array($parent) && array_key_exists($key, $parent)) {
+            $exists = true;
+            $current = $parent[$key];
+        }
+        elseif (is_object($parent) && property_exists($parent, $key)) {
+            $exists = true;
+            $current = $parent->{$key};
+        }
+        else {
+            $current = $this->get($subject, $path, $empty);
+        }
+
+        if ($test($current, $replace, $exists)) {
+            $this->set($subject, $path, $replace, $childTemplate);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Removes $count elements from $path, right to left
+     *
+     * @param string|array &$path
+     * @param int          $count
+     *
+     * @return mixed
+     */
+    protected function pathPop(&$path)
+    {
+        $type = gettype($path);
+        $this->validate(__FUNCTION__, $path);
+        $return = array_pop($path);
+        $path = $type === 'string' ? implode($this->pathSeparator, $path) : $path;
+
+        return $return;
+    }
+
     protected function cacheSet($op)
     {
         $args = func_get_args();
@@ -150,58 +331,5 @@ class Data implements DataInterface
                 return $childObject->get($property, $defaultValue);
             },
         );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function set(&$subject, $path, $value, $childTemplate = null)
-    {
-        $this->cacheSet(__FUNCTION__, $subject, $path, $value, $childTemplate);
-        $this->validate($subject, $path);
-
-        // Establish the childTemplate on first pass.
-        if (is_null($childTemplate)) {
-            if (is_array($subject)) {
-                $childTemplate = array();
-            }
-            elseif (is_object($subject)) {
-                $childTemplate = get_class($subject);
-                $childTemplate = new $childTemplate;
-            }
-        }
-
-        $childTemplate = is_object($childTemplate) ? clone $childTemplate : $childTemplate;
-
-        $key = array_shift($path);
-        if (is_array($subject)) {
-            $subject[$key] = isset($subject[$key]) ? $subject[$key] : $childTemplate;
-            $next = &$subject[$key];
-        }
-        elseif (is_object($subject)) {
-            $subject->{$key} = isset($subject->{$key}) ? $subject->{$key} : $childTemplate;
-            $next = &$subject->{$key};
-        }
-
-        if (empty($path)) {
-            $next = $value;
-
-            $this->cacheClear('set', 'validate');
-
-            return $this;
-        }
-
-        return $this->set($next, $path, $value, $childTemplate);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function ensure(&$subject, $path, $default, $childTemplate = null)
-    {
-        $value = $this->get($subject, $path, $default);
-        $this->set($subject, $path, $value, $childTemplate);
-
-        return $this;
     }
 }

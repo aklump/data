@@ -8,6 +8,126 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+
+    public function testFillWithObject()
+    {
+        $subject = (object) array('do' => null);
+        $return = $this->data->fill($subject, 'do', 're', 'is_null');
+        $this->assertInstanceOf('AKlump\Data\DataInterface', $return);
+
+        $this->assertSame('re', $subject->do);
+
+        $subject = (object) array();
+        $this->data->fill($subject, 'do', 're', 'not_exists');
+        $this->assertSame('re', $subject->do);
+
+        $subject = (object) array('do' => '');
+        $this->data->fill($subject, 'do', 're', 'not_exists');
+        $this->assertSame('', $subject->do);
+    }
+
+    /**
+     * Provides data for testEmpty.
+     */
+    function DataForTestFillProvider()
+    {
+        $tests = array();
+        $tests[] = array(
+            'href',
+            array('href' => null),
+            'javascript:void(0)',
+            array('href' => 'javascript:void(0)'),
+            'is_null',
+        );
+        $tests[] = array(
+            'href',
+            array('href' => ''),
+            'javascript:void(0)',
+            array('href' => ''),
+            'is_null',
+        );
+        $tests[] = array(
+            'href',
+            array(),
+            'javascript:void(0)',
+            array('href' => 'javascript:void(0)'),
+            'not_exists',
+        );
+        $tests[] = array(
+            'href',
+            array('href' => null),
+            'javascript:void(0)',
+            array('href' => null),
+            'not_exists',
+        );
+        $tests[] = array(
+            'href',
+            array('href' => null),
+            'javascript:void(0)',
+            array('href' => null),
+            // Only replace if it doesn't exist.
+            function ($current, $replace, $exists) {
+                return !$exists;
+            },
+        );
+        $tests[] = array(
+            'do.re.mi',
+            array(),
+            'javascript:void(0)',
+            array('do' => array('re' => array('mi' => 'javascript:void(0)'))),
+            null,
+        );
+        $tests[] = array(
+            'href',
+            array('href' => null),
+            'javascript:void(0)',
+            array('href' => 'javascript:void(0)'),
+            'empty',
+        );
+        $tests[] = array(
+            'href',
+            array(),
+            'javascript:void(0)',
+            array('href' => 'javascript:void(0)'),
+            null,
+        );
+        $tests[] = array(
+            'href',
+            array('href' => false),
+            'javascript:void(0)',
+            array('href' => 'javascript:void(0)'),
+            function ($current, $replace) {
+                return empty($current);
+            },
+        );
+        $tests[] = array(
+            'href',
+            array('href' => ''),
+            'javascript:void(0)',
+            array('href' => 'javascript:void(0)'),
+            null,
+        );
+        $tests[] = array(
+            'href',
+            array('href' => '/'),
+            'javascript:void(0)',
+            array('href' => '/'),
+            null,
+        );
+
+        return $tests;
+    }
+
+    /**
+     * @dataProvider DataForTestFillProvider
+     */
+    public function testFill($path, $subject, $value, $control, $test)
+    {
+        $return = $this->data->fill($subject, $path, $value, $test);
+        $this->assertSame((array) $control, (array) $subject);
+        $this->assertInstanceOf('AKlump\Data\DataInterface', $return);
+    }
+
     /**
      * Provides data for testEnsure.
      */
@@ -230,3 +350,4 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $this->data = new Data();
     }
 }
+

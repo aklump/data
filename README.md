@@ -68,6 +68,37 @@ You can pass a callback to process the value such as loading a record by id.
     $value = $data->get($a, 'b.c', 'e');
     $value === 'c';
 
+## Data::fill()
+This method will fill in only if a path is empty.  By default the test for empty is based on the the type of the replacement value, and will only be replaced in such circumstance.
+
+### Example 1
+    <?php
+    // In this case the value is filled in.
+    $array = array('do' => '');
+    $data->fill($array, 'do', 're');
+    
+    // The value is filled in because 're' is a string and the current value is an empty string ''.
+    $array === array('do' => 're');
+    
+    
+### Example 2
+    <?php
+    // In this case the value is NOT.
+    $array = array('do' => null);
+    $data->fill($array, 'do', 're');
+    
+    // The old value of null remains because 're' is a string and the current value not a string; even though it's empty, it will not be replaced.
+    $array === array('do' => null);
+    
+### Example 3
+    <?php
+    // If you merely want to check if the current value is empty then you should pass the fourth param 'empty'.
+    $array = array('do' => null);
+    $data->fill($array, 'do', 're', 'empty');
+    
+    // This time it was replaced because we're only testing if the current value is 'empty'
+    $array === array('do' => 're');
+
 ## Acknowledgments
 * Thank you Aaron Jensen (https://github.com/aaronjensen) for introducing me to this concept.
 * https://lodash.com/docs/4.16.2#get
