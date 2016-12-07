@@ -26,6 +26,12 @@
             "sort": 0
         },
         {
+            "id": "transform",
+            "title": "Transformations",
+            "file": "transform.md",
+            "sort": 50
+        },
+        {
             "id": "write--ways",
             "title": "Ways to Write Data",
             "file": "write--ways.md",

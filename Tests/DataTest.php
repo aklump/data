@@ -8,6 +8,41 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testTransformCallable()
+    {
+        $from = array('being' => 'dog');
+        $this->data->getThen($from, 'being')
+                   ->call(function ($value) {
+                       $value = str_split($value);
+                       $value = array_reverse($value);
+
+                       return implode($value);
+                   })
+                   ->set($from);
+        $this->assertSame('god', $from['being']);
+
+        // Make sure default works too.
+        $from = array();
+        $this->data->getThen($from, 'being', 'dog')
+                   ->call(function ($value) {
+                       $value = str_split($value);
+                       $value = array_reverse($value);
+
+                       return implode($value);
+                   })
+                   ->set($from);
+        $this->assertSame('god', $from['being']);
+    }
+
+    public function testTransform()
+    {
+        $from = array('name' => 'bob');
+        $this->data->getThen($from, 'name')
+                   ->call('strtoupper')
+                   ->set($from);
+        $this->assertSame('BOB', $from['name']);
+    }
+
     public function testUsingDefinedVars()
     {
         $do = 'a deer';
@@ -20,7 +55,7 @@ class DataTest extends \PHPUnit_Framework_TestCase
 
     public function testOnlyIfWithTestCallback()
     {
-        $test = function($value) {
+        $test = function ($value) {
             return substr($value, 0, 1) === 'a';
         };
 
@@ -92,7 +127,9 @@ class DataTest extends \PHPUnit_Framework_TestCase
     {
         $data = array('nid' => '123');
         $output = array();
-        $this->data->onlyIf($data, 'nid')->call('wonky_function')->set($output, 'id');
+        $this->data->onlyIf($data, 'nid')
+                   ->call('wonky_function')
+                   ->set($output, 'id');
     }
 
     public function testCall()

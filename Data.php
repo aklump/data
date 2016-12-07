@@ -83,7 +83,7 @@ class Data implements DataInterface
             return $this->postGet($defaultValue, $defaultValue, $valueCallback);
         }
 
-        $this->validate($subject, $path, $defaultValue);
+        $this->validate($subject, $path);
         $key = array_shift($path);
         $base = $subject;
 
@@ -294,13 +294,17 @@ class Data implements DataInterface
      */
     public function call($function_name)
     {
-        if (!function_exists($function_name)) {
+        $value = $path = null;
+        $this->useCarry($path, $value);
+
+        if (is_callable($function_name)) {
+            $value = $function_name($value);
+        }
+        else {
             throw new \InvalidArgumentException("Invalid function called $function_name");
         }
 
-        $value = $path = null;
-        $this->useCarry($path, $value);
-        $this->setCarry($path, $function_name($value));
+        $this->setCarry($path, $value);
 
         return $this;
     }
@@ -417,7 +421,7 @@ class Data implements DataInterface
     {
         $this->cacheSet(__FUNCTION__, $subject, $path);
         if (empty($this->cache['validate']['validated'])) {
-            // Convert ints/floats to a string, if possible
+            // Convert integers/floats to a string, if possible
             $path = is_numeric($path) && strval($path) == $path ? strval($path) : $path;
 
             // Explode strings
@@ -435,10 +439,10 @@ class Data implements DataInterface
      * property values.
      *
      * Extend this method as needed if you have child classes using
-     * methods other than 'get' for extracting a propery value.
+     * methods other than 'get' for extracting a property value.
      *
      * By returning an array of methods, it allows this class to support
-     * non-homomogenous objects under a commone banner.  The first matched
+     * non-homogenous objects under a common banner.  The first matched
      * method on the child will be used, subsequent methods will not be called.
      *
      * @return array

@@ -31,3 +31,14 @@ Calling fill will not place the bucket on the table, only fill it if it's alread
 So with those out of the way, `set()` is a piece of cake.
 
 Set doesn't care if there is a bucket on the table or not.  Set will walk up to the table grab the bucket, dump it out, set it on the table, and put the apple in it.  No consideration of anything.
+
+## In Summary
+|  | set | ensure | fill |
+|----------|----------|----------|----------|
+| guarantees key/property | Y | Y | - |
+| overwrites current value | Y | - | only if empty |
+
+* Use `fill()` if you want to make sure no value is empty, but do not want to add the key/property if non-existent.
+* Use `ensure()` if you only care that a key/property is set, but not the value.
+* Use `set()` if you want to overwrite current values, while knowing that a key/property is surely set.
+* Use the `getThen()->...->set()` chain with a value callback or filter if you just want to transform a value.

@@ -73,6 +73,40 @@
 <p>So with those out of the way, <code>set()</code> is a piece of cake.</p>
 
 <p>Set doesn't care if there is a bucket on the table or not.  Set will walk up to the table grab the bucket, dump it out, set it on the table, and put the apple in it.  No consideration of anything.</p>
+
+<h2>In Summary</h2>
+
+<table>
+<thead>
+<tr>
+  <th></th>
+  <th>set</th>
+  <th>ensure</th>
+  <th>fill</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>guarantees key/property</td>
+  <td>Y</td>
+  <td>Y</td>
+  <td>-</td>
+</tr>
+<tr>
+  <td>overwrites current value</td>
+  <td>Y</td>
+  <td>-</td>
+  <td>only if empty</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>Use <code>fill()</code> if you want to make sure no value is empty, but do not want to add the key/property if non-existent.</li>
+<li>Use <code>ensure()</code> if you only care that a key/property is set, but not the value.</li>
+<li>Use <code>set()</code> if you want to overwrite current values, while knowing that a key/property is surely set.</li>
+<li>Use the <code>getThen()-&gt;...-&gt;set()</code> chain with a value callback or filter if you just want to transform a value.</li>
+</ul>
 </section>
 
 <div class="search__results">
@@ -88,7 +122,7 @@
 
 
   <div id="footer-legaleeze">
-    <p class="legaleeze center">Version: 0.0.17 &bull; Last Updated: Wed, 07 Dec 2016 10:09:00 -0800</p>
+    <p class="legaleeze center">Version: 0.0.18 &bull; Last Updated: Wed, 07 Dec 2016 12:14:31 -0800</p>
   </div>
 </footer>
 
