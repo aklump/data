@@ -124,10 +124,15 @@ class Data implements DataInterface
      */
     public function fill(&$subject, $path, $value, $test = null, $childTemplate = null)
     {
-        // Figure out what an empty value is based on type of $value.
-        $type = gettype($value);
-        $empty = null;
-        settype($empty, $type);
+        // Figure out what an empty value is based on type of $value or on $childTemplate.
+        if (is_null($childTemplate)) {
+            $type = gettype($value);
+            $empty = null;
+            settype($empty, $type);
+        }
+        else {
+            $empty = $childTemplate;
+        }
 
         // Our default test is based on variable type.
         $test = is_null($test) ? 'empty' : $test;

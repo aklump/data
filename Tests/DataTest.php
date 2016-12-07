@@ -8,6 +8,14 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testFillRespectsChildWhenNonExistent()
+    {
+        $subject = array();
+        $path = 'attributes';
+        $value = new \stdClass;
+        $this->data->fill($subject, $path, $value, 'empty', array());
+        $this->assertSame(array('attributes' => $value), $subject);
+    }
 
     /**
      * @expectedException InvalidArgumentException
