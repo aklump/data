@@ -14,7 +14,7 @@ class DataTest extends \PHPUnit_Framework_TestCase
     public function testFillNoThirdNoCarryThrows()
     {
         $data = array('id' => 2);
-        $this->data->fill($data, 'id', null);
+        $this->data->fill($data, 'id');
     }
 
     public function testOnlyIfFill()
@@ -36,7 +36,7 @@ class DataTest extends \PHPUnit_Framework_TestCase
     public function testEnsureNoThirdNoCarryThrows()
     {
         $data = array('id' => 2);
-        $this->data->ensure($data, 'id', null);
+        $this->data->ensure($data, 'id');
     }
 
     public function testOnlyIfEnsure()

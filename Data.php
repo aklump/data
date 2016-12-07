@@ -74,10 +74,11 @@ class Data implements DataInterface
      */
     public function set(&$subject, $path, $value = null, $childTemplate = null)
     {
-        if (is_null($value)) {
-            if (!$this->cache['carryIsSet']) {
-                throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
-            }
+        if (func_num_args() < 3 && !$this->cache['carryIsSet']) {
+            throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+        }
+
+        if ($this->cache['carryIsSet']) {
             $value = $this->cache['carry'];
         }
 
@@ -127,10 +128,11 @@ class Data implements DataInterface
      */
     public function ensure(&$subject, $path, $default = null, $childTemplate = null)
     {
-        if (is_null($default)) {
-            if (!$this->cache['carryIsSet']) {
-                throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
-            }
+        if (func_num_args() < 3 && !$this->cache['carryIsSet']) {
+            throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+        }
+
+        if ($this->cache['carryIsSet']) {
             $default = $this->cache['carry'];
         }
 
@@ -145,11 +147,11 @@ class Data implements DataInterface
      */
     public function fill(&$subject, $path, $value = null, $test = null, $childTemplate = null)
     {
+        if (func_num_args() < 3 && !$this->cache['carryIsSet']) {
+            throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+        }
 
-        if (is_null($value)) {
-            if (!$this->cache['carryIsSet']) {
-                throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
-            }
+        if ($this->cache['carryIsSet']) {
             $value = $this->cache['carry'];
         }
 
