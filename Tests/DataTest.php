@@ -8,6 +8,39 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testConsecutiveSetsResetsCarry()
+    {
+        foreach ($this->getWriteMethods() as $method) {
+            $data = array('name' => 'Aaron');
+            $do = array();
+            $this->data->onlyIf($data, 'name')->{$method}($do, 'name');
+            $this->assertSame('Aaron', $do['name']);
+
+            $re = array();
+            $this->data->{$method}($re, 'name', null);
+            $this->assertNull($re['name']);
+        }
+    }
+
+    public function testOnlyIfWithValueTransform()
+    {
+        foreach ($this->getWriteMethods() as $method) {
+            $node = array('status' => 1);
+            $data = array();
+            $this->data->onlyIf($node, 'status', 'private', function ($value, $default) {
+                return $value ? 'public' : $default;
+            })->{$method}($data, 'access');
+            $this->assertSame('public', $data['access']);
+
+            $node = array('status' => 0);
+            $data = array();
+            $this->data->onlyIf($node, 'status', 'private', function ($value, $default) {
+                return $value ? 'public' : $default;
+            })->{$method}($data, 'access');
+            $this->assertSame('private', $data['access']);
+        }
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */
@@ -17,19 +50,6 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $this->data->fill($data, 'id');
     }
 
-    public function testOnlyIfFill()
-    {
-        $input = array('id' => 'food');
-        $output = array();
-        $return = $this->data->onlyIf($input, 'id')->fill($output, 'id');
-        $this->assertInstanceOf(get_class($this->data), $return);
-        $this->assertSame('food', $output['id']);
-
-        $return = $this->data->onlyIf($input, 'title')
-                             ->fill($output, 'title');
-        $this->assertInstanceOf(get_class($this->data), $return);
-        $this->assertTrue(empty($output['title']));
-    }
     /**
      * @expectedException InvalidArgumentException
      */
@@ -37,20 +57,6 @@ class DataTest extends \PHPUnit_Framework_TestCase
     {
         $data = array('id' => 2);
         $this->data->ensure($data, 'id');
-    }
-
-    public function testOnlyIfEnsure()
-    {
-        $input = array('id' => 'food');
-        $output = array();
-        $return = $this->data->onlyIf($input, 'id')->ensure($output, 'id');
-        $this->assertInstanceOf(get_class($this->data), $return);
-        $this->assertSame('food', $output['id']);
-
-        $return = $this->data->onlyIf($input, 'title')
-                             ->ensure($output, 'title');
-        $this->assertInstanceOf(get_class($this->data), $return);
-        $this->assertTrue(empty($output['title']));
     }
 
     /**
@@ -62,17 +68,20 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $this->data->set($data, 'id');
     }
 
-    public function testOnlyIfSet()
+    public function testOnlyIf()
     {
-        $input = array('id' => 'food');
-        $output = array();
-        $return = $this->data->onlyIf($input, 'id')->set($output, 'id');
-        $this->assertInstanceOf(get_class($this->data), $return);
-        $this->assertSame('food', $output['id']);
+        foreach ($this->getWriteMethods() as $method) {
+            $input = array('id' => 'food');
+            $output = array();
+            $return = $this->data->onlyIf($input, 'id')->{$method}($output, 'id');
+            $this->assertInstanceOf(get_class($this->data), $return);
+            $this->assertSame('food', $output['id']);
 
-        $return = $this->data->onlyIf($input, 'title')->set($output, 'title');
-        $this->assertInstanceOf(get_class($this->data), $return);
-        $this->assertTrue(empty($output['title']));
+            $return = $this->data->onlyIf($input, 'title')
+                                 ->{$method}($output, 'title');
+            $this->assertInstanceOf(get_class($this->data), $return);
+            $this->assertTrue(empty($output['title']));
+        }
     }
 
     public function testFillRespectsChildWhenNonExistent()
@@ -471,6 +480,11 @@ class DataTest extends \PHPUnit_Framework_TestCase
                 ->method('get')
                 ->will($this->returnValue('do'));
         $this->assertSame($this->data->get($object3, 'do'), 'do');
+    }
+
+    protected function getWriteMethods()
+    {
+        return array('set', 'fill', 'ensure');
     }
 
     public function setUp()

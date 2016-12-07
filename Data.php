@@ -78,9 +78,7 @@ class Data implements DataInterface
             throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
         }
 
-        if ($this->cache['carryIsSet']) {
-            $value = $this->cache['carry'];
-        }
+        $this->useCarryValue($value);
 
         if ($this->cache['abort']) {
             return $this;
@@ -132,14 +130,21 @@ class Data implements DataInterface
             throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
         }
 
-        if ($this->cache['carryIsSet']) {
-            $default = $this->cache['carry'];
-        }
+        $this->useCarryValue($default);
 
         $value = $this->get($subject, $path, $default);
         $this->set($subject, $path, $value, $childTemplate);
 
         return $this;
+    }
+
+    protected function useCarryValue(&$value)
+    {
+        if ($this->cache['carryIsSet']) {
+            $value = $this->cache['carry'];
+            $this->cache['carry'] = null;
+            $this->cache['carryIsSet'] = false;
+        }
     }
 
     /**
@@ -151,9 +156,7 @@ class Data implements DataInterface
             throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
         }
 
-        if ($this->cache['carryIsSet']) {
-            $value = $this->cache['carry'];
-        }
+        $this->useCarryValue($value);
 
         // Figure out what an empty value is based on type of $value or on $childTemplate.
         if (is_null($childTemplate)) {
