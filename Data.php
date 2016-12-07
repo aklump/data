@@ -18,9 +18,12 @@ class Data implements DataInterface
      * @var array
      */
     protected $cache = array(
-        'set'      => array(),
-        'get'      => array(),
-        'validate' => array(),
+        'set'        => array(),
+        'get'        => array(),
+        'validate'   => array(),
+        'carry'      => null,
+        'carryIsSet' => false,
+        'abort'      => false,
     );
 
     /**
@@ -69,8 +72,19 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function set(&$subject, $path, $value, $childTemplate = null)
+    public function set(&$subject, $path, $value = null, $childTemplate = null)
     {
+        if (is_null($value)) {
+            if (!$this->cache['carryIsSet']) {
+                throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+            }
+            $value = $this->cache['carry'];
+        }
+
+        if ($this->cache['abort']) {
+            return $this;
+        }
+
         $this->cacheSet(__FUNCTION__, $subject, $path, $value, $childTemplate);
         $this->validate($subject, $path);
 
@@ -111,8 +125,15 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function ensure(&$subject, $path, $default, $childTemplate = null)
+    public function ensure(&$subject, $path, $default = null, $childTemplate = null)
     {
+        if (is_null($default)) {
+            if (!$this->cache['carryIsSet']) {
+                throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+            }
+            $default = $this->cache['carry'];
+        }
+
         $value = $this->get($subject, $path, $default);
         $this->set($subject, $path, $value, $childTemplate);
 
@@ -122,8 +143,16 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function fill(&$subject, $path, $value, $test = null, $childTemplate = null)
+    public function fill(&$subject, $path, $value = null, $test = null, $childTemplate = null)
     {
+
+        if (is_null($value)) {
+            if (!$this->cache['carryIsSet']) {
+                throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+            }
+            $value = $this->cache['carry'];
+        }
+
         // Figure out what an empty value is based on type of $value or on $childTemplate.
         if (is_null($childTemplate)) {
             $type = gettype($value);
@@ -198,6 +227,18 @@ class Data implements DataInterface
         if ($test($current, $exists, $value)) {
             $this->set($subject, $path, $value, $childTemplate);
         }
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function onlyIf($subject, $path, $defaultValue = null, $valueCallback = null)
+    {
+        $this->cache['carry'] = $this->get($subject, $path, $defaultValue, $valueCallback);
+        $this->cache['carryIsSet'] = true;
+        $this->cache['abort'] = empty($this->cache['carry']);
 
         return $this;
     }

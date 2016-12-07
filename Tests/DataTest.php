@@ -8,6 +8,73 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testFillNoThirdNoCarryThrows()
+    {
+        $data = array('id' => 2);
+        $this->data->fill($data, 'id', null);
+    }
+
+    public function testOnlyIfFill()
+    {
+        $input = array('id' => 'food');
+        $output = array();
+        $return = $this->data->onlyIf($input, 'id')->fill($output, 'id');
+        $this->assertInstanceOf(get_class($this->data), $return);
+        $this->assertSame('food', $output['id']);
+
+        $return = $this->data->onlyIf($input, 'title')
+                             ->fill($output, 'title');
+        $this->assertInstanceOf(get_class($this->data), $return);
+        $this->assertTrue(empty($output['title']));
+    }
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testEnsureNoThirdNoCarryThrows()
+    {
+        $data = array('id' => 2);
+        $this->data->ensure($data, 'id', null);
+    }
+
+    public function testOnlyIfEnsure()
+    {
+        $input = array('id' => 'food');
+        $output = array();
+        $return = $this->data->onlyIf($input, 'id')->ensure($output, 'id');
+        $this->assertInstanceOf(get_class($this->data), $return);
+        $this->assertSame('food', $output['id']);
+
+        $return = $this->data->onlyIf($input, 'title')
+                             ->ensure($output, 'title');
+        $this->assertInstanceOf(get_class($this->data), $return);
+        $this->assertTrue(empty($output['title']));
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSetNoThirdNoCarryThrows()
+    {
+        $data = array('id' => 2);
+        $this->data->set($data, 'id');
+    }
+
+    public function testOnlyIfSet()
+    {
+        $input = array('id' => 'food');
+        $output = array();
+        $return = $this->data->onlyIf($input, 'id')->set($output, 'id');
+        $this->assertInstanceOf(get_class($this->data), $return);
+        $this->assertSame('food', $output['id']);
+
+        $return = $this->data->onlyIf($input, 'title')->set($output, 'title');
+        $this->assertInstanceOf(get_class($this->data), $return);
+        $this->assertTrue(empty($output['title']));
+    }
+
     public function testFillRespectsChildWhenNonExistent()
     {
         $subject = array();

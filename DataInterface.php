@@ -28,7 +28,9 @@ interface DataInterface
      *
      * @param array|object $subject       The base subject.
      * @param string       $path
-     * @param mixed        $value         The value to set.
+     * @param mixed        $value         The value to set.  This can only be
+     *                                    omitted if a conditional method is
+     *                                    chained before this.
      * @param null|mixed   $childTemplate If an child element must be created
      *                                    to
      *                                    establish $path, you may pass the
@@ -46,7 +48,7 @@ interface DataInterface
      *
      * @return $this|\AKlump\Data\Data
      */
-    public function set(&$subject, $path, $value, $childTemplate = null);
+    public function set(&$subject, $path, $value = null, $childTemplate = null);
 
     /**
      * Ensure that a variable path exists, by creating a default value at $path
@@ -55,7 +57,9 @@ interface DataInterface
      * @param array|object $subject       The base subject.
      * @param string       $path
      * @param mixed        $default       The value to set, if the item doesn't
-     *                                    already exist.
+     *                                    already exist. This can only be
+     *                                    omitted if a conditional method is
+     *                                    chained before this.
      * @param null|mixed   $childTemplate If an child element must be created
      *                                    to
      *                                    establish $path, you may pass the
@@ -73,7 +77,7 @@ interface DataInterface
      *
      * @return $this
      */
-    public function ensure(&$subject, $path, $default, $childTemplate = null);
+    public function ensure(&$subject, $path, $default = null, $childTemplate = null);
 
     /**
      *
@@ -117,11 +121,35 @@ interface DataInterface
      *
      * @param array|object $subject The base subject.
      * @param string       $path
-     * @param mixed        $value   The value to set.
+     * @param mixed        $value   The value to set. This can only be omitted
+     *                              if a conditional method is chained before
+     *                              this.
      * @param mixed        $test    See notes above.
      * @param null         $childTemplate
      *
      * @return $this
      */
-    public function fill(&$subject, $path, $value, $test = null, $childTemplate = null);
+    public function fill(&$subject, $path, $value = null, $test = null, $childTemplate = null);
+
+    /**
+     * Apply a conditional test then get and carry the value.
+     *
+     * @param mixed        $subject
+     * @param string|array $path
+     * @param mixed        $defaultValue  Defaults to null.
+     * @param Callable     $valueCallback Defaults to null. Optional callback
+     *                                    if the value does not match
+     *                                    $defaultValue, receives the
+     *                                    arguments: $value, $defaultValue.
+     *
+     * @return $this
+     *
+     * @code
+     *   $o = new Data;
+     *   $data = ['id' => 1];
+     *   $output = [];
+     *   $o->onlyIf($data, 'id')->set($other, 'id);
+     * @endcode
+     */
+    public function onlyIf($subject, $path, $defaultValue = null, $valueCallback = null);
 }
