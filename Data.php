@@ -26,6 +26,17 @@ class Data implements DataInterface
         'abort'      => false,
     );
 
+
+    /**
+     * @inheritdoc
+     */
+    public function getInt($subject, $path, $defaultValue = 0)
+    {
+        return $this->get($subject, $path, $defaultValue, function ($value, $default) {
+            return is_null($value) ? $default : intval($value);
+        });
+    }
+
     /**
      * @inheritdoc
      */
@@ -138,15 +149,6 @@ class Data implements DataInterface
         return $this;
     }
 
-    protected function useCarryValue(&$value)
-    {
-        if ($this->cache['carryIsSet']) {
-            $value = $this->cache['carry'];
-            $this->cache['carry'] = null;
-            $this->cache['carryIsSet'] = false;
-        }
-    }
-
     /**
      * @inheritdoc
      */
@@ -246,6 +248,15 @@ class Data implements DataInterface
         $this->cache['abort'] = empty($this->cache['carry']);
 
         return $this;
+    }
+
+    protected function useCarryValue(&$value)
+    {
+        if ($this->cache['carryIsSet']) {
+            $value = $this->cache['carry'];
+            $this->cache['carry'] = null;
+            $this->cache['carryIsSet'] = false;
+        }
     }
 
     /**
@@ -350,4 +361,5 @@ class Data implements DataInterface
             },
         );
     }
+
 }

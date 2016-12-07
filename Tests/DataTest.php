@@ -8,6 +8,14 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testGetInt()
+    {
+        $data = array('nid' => '123');
+        $this->assertSame(123, $this->data->getInt($data, 'nid'));
+        $this->assertSame(0, $this->data->getInt($data, 'uid'));
+        $this->assertSame(null, $this->data->getInt($data, 'uid', null));
+    }
+
     public function testConsecutiveSetsResetsCarry()
     {
         foreach ($this->getWriteMethods() as $method) {

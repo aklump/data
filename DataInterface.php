@@ -152,4 +152,21 @@ interface DataInterface
      * @endcode
      */
     public function onlyIf($subject, $path, $defaultValue = null, $valueCallback = null);
+
+    /**
+     * Return the intval() of a value.
+     *
+     * This is a shortcut for using a callback function on ::get().
+     *
+     * @param mixed        $subject
+     * @param string|array $path
+     * @param int          $defaultValue Optional.  Defaults to 0.  You may
+     *                                   pass a non-integer value as default,
+     *                                   it will be passed through if the value
+     *                                   is determined to be null; IT WILL NOT
+     *                                   BE CONVERTED TO AN INTEGER.
+     *
+     * @return mixed
+     */
+    public function getInt($subject, $path, $defaultValue = 0);
 }
