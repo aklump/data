@@ -24,6 +24,40 @@ interface DataInterface
     public function get($subject, $path, $defaultValue = null, $valueCallback = null);
 
     /**
+     * Return the intval() of a value.
+     *
+     * This is a shortcut for using a callback function on ::get().
+     *
+     * @param mixed        $subject
+     * @param string|array $path
+     * @param int          $defaultValue Optional.  Defaults to 0.  You may
+     *                                   pass a non-integer value as default,
+     *                                   it will be passed through if the value
+     *                                   is determined to be null; IT WILL NOT
+     *                                   BE CONVERTED TO AN INTEGER.
+     *
+     * @return mixed
+     */
+    public function getInt($subject, $path, $defaultValue = 0);
+
+    /**
+     * Get a value and return the object for chaining.
+     *
+     * Use value() to retrieve the value.
+     *
+     * @param mixed        $subject
+     * @param string|array $path
+     * @param mixed        $defaultValue  Defaults to null.
+     * @param Callable     $valueCallback Defaults to null. Optional callback
+     *                                    if the value does not match
+     *                                    $defaultValue, receives the
+     *                                    arguments: $value, $defaultValue.
+     *
+     * @return $this
+     */
+    public function getThen($subject, $path, $defaultValue = null, $valueCallback = null);
+
+    /**
      * Set a value on $subject, including parents as needed.
      *
      * @param array|object $subject       The base subject.
@@ -132,18 +166,15 @@ interface DataInterface
     public function fill(&$subject, $path, $value = null, $test = null, $childTemplate = null);
 
     /**
-     * Apply a conditional test then get and carry the value.
+     * Apply a conditional test and carry the value if not empty
      *
      * @param mixed        $subject
      * @param string|array $path
-     * @param mixed        $defaultValue  Defaults to null.
-     * @param Callable     $valueCallback Defaults to null. Optional callback
-     *                                    if the value does not match
-     *                                    $defaultValue, receives the
-     *                                    arguments: $value, $defaultValue.
+     * @param callable     $test A function that takes the value as it's
+     *                           argument and returns true if the value should
+     *                           be used.
      *
      * @return $this
-     *
      * @code
      *   $o = new Data;
      *   $data = ['id' => 1];
@@ -151,22 +182,35 @@ interface DataInterface
      *   $o->onlyIf($data, 'id')->set($other, 'id);
      * @endcode
      */
-    public function onlyIf($subject, $path, $defaultValue = null, $valueCallback = null);
+    public function onlyIf($subject, $path, $test = null);
+
 
     /**
-     * Return the intval() of a value.
+     * Call a function with carry value.
      *
-     * This is a shortcut for using a callback function on ::get().
+     * @param string $function_name A function name that takes $value as it's
+     *                              first argument, e.g. intval, strval,
+     *                              array_filter, etc.
      *
-     * @param mixed        $subject
-     * @param string|array $path
-     * @param int          $defaultValue Optional.  Defaults to 0.  You may
-     *                                   pass a non-integer value as default,
-     *                                   it will be passed through if the value
-     *                                   is determined to be null; IT WILL NOT
-     *                                   BE CONVERTED TO AN INTEGER.
+     * @return $this
+     */
+    public function call($function_name);
+
+    /**
+     * Leverage PHP's filter_var function on carry values.
+     *
+     * @param $filter      List of available filters can be found at
+     *                     http://php.net/manual/en/filter.filters.php.
+     * @param $options     Optional. Defaults to null.
+     *
+     * @return $this
+     */
+    public function filter($filter, $options = null);
+
+    /**
+     * Return the value at the end of a set of chained methods.
      *
      * @return mixed
      */
-    public function getInt($subject, $path, $defaultValue = 0);
+    public function value();
 }

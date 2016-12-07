@@ -8,6 +8,101 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testUsingDefinedVars()
+    {
+        $do = 'a deer';
+        $re = 'golden sun';
+        $vars = get_defined_vars();
+        $this->assertSame('a deer', $this->data->get($vars, 'do'));
+        $this->assertSame('golden sun', $this->data->get($vars, 're'));
+        $this->assertSame('a name', $this->data->get($vars, 'me', 'a name'));
+    }
+
+    public function testOnlyIfWithTestCallback()
+    {
+        $test = function($value) {
+            return substr($value, 0, 1) === 'a';
+        };
+
+        $from = array('name' => 'bob');
+        $value = $this->data->onlyIf($from, 'name', $test)->value();
+        $this->assertNull($value);
+
+        $from = array('name' => 'aaron');
+        $value = $this->data->onlyIf($from, 'name', $test)->value();
+        $this->assertSame('aaron', $value);
+    }
+
+    public function testOnlyIfExamples()
+    {
+        $from = array('id' => '123');
+        $to = array();
+        $this->data->onlyIf($from, 'title')->set($to);
+        $this->assertEmpty($to);
+
+        $from = array('id' => '123');
+        $to = array();
+        $this->data->onlyIf($from, 'id')->set($to, 'account.id');
+        $this->assertSame('123', $to['account']['id']);
+    }
+
+    public function testOnlyIfNoPathNoValue()
+    {
+        foreach ($this->getWriteMethods() as $method) {
+            $to = array('id' => 123);
+            $from = array();
+            $this->data->onlyIf($from, 'id')->{$method}($to);
+            $this->assertSame(123, $to['id']);
+        }
+    }
+
+    public function testOnlyIfSetNoKey()
+    {
+        $from = array('id' => '123');
+        $to = array();
+        $this->data->onlyIf($from, 'id')->set($to);
+        $this->assertSame('123', $to['id']);
+        $this->data->onlyIf($from, 'id')->set($to, 'nid');
+        $this->assertSame('123', $to['nid']);
+    }
+
+    public function testGetThenValue()
+    {
+        $data = array('value' => 'here it is 1.35 quarts');
+        $value = $this->data->getThen($data, 'value')
+                            ->filter(FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)
+                            ->value();
+        $this->assertSame('1.35', $value);
+    }
+
+    public function testFilter()
+    {
+        $data = array('value' => 'here it is 1.35 quarts');
+        $output = array();
+        $this->data->onlyIf($data, 'value')
+                   ->filter(FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)
+                   ->set($output, 'value');
+        $this->assertSame('1.35', $output['value']);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testCallWithWonkyFunctionThrows()
+    {
+        $data = array('nid' => '123');
+        $output = array();
+        $this->data->onlyIf($data, 'nid')->call('wonky_function')->set($output, 'id');
+    }
+
+    public function testCall()
+    {
+        $data = array('nid' => '123');
+        $output = array();
+        $this->data->onlyIf($data, 'nid')->call('intval')->set($output, 'id');
+        $this->assertSame(123, $output['id']);
+    }
+
     public function testGetInt()
     {
         $data = array('nid' => '123');
@@ -30,20 +125,20 @@ class DataTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function testOnlyIfWithValueTransform()
+    public function testGetThenWithValueTransform()
     {
         foreach ($this->getWriteMethods() as $method) {
             $node = array('status' => 1);
             $data = array();
-            $this->data->onlyIf($node, 'status', 'private', function ($value, $default) {
-                return $value ? 'public' : $default;
+            $this->data->getThen($node, 'status', null, function ($value) {
+                return $value ? 'public' : 'private';
             })->{$method}($data, 'access');
             $this->assertSame('public', $data['access']);
 
             $node = array('status' => 0);
             $data = array();
-            $this->data->onlyIf($node, 'status', 'private', function ($value, $default) {
-                return $value ? 'public' : $default;
+            $this->data->getThen($node, 'status', null, function ($value, $default) {
+                return $value ? 'public' : 'private';
             })->{$method}($data, 'access');
             $this->assertSame('private', $data['access']);
         }
@@ -76,12 +171,40 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $this->data->set($data, 'id');
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testFillNoSecondNoCarryThrows()
+    {
+        $data = array('id' => 2);
+        $this->data->fill($data);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testEnsureNoSecondNoCarryThrows()
+    {
+        $data = array('id' => 2);
+        $this->data->ensure($data);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSetNoSecondNoCarryThrows()
+    {
+        $data = array('id' => 2);
+        $this->data->set($data);
+    }
+
     public function testOnlyIf()
     {
         foreach ($this->getWriteMethods() as $method) {
             $input = array('id' => 'food');
             $output = array();
-            $return = $this->data->onlyIf($input, 'id')->{$method}($output, 'id');
+            $return = $this->data->onlyIf($input, 'id')
+                                 ->{$method}($output, 'id');
             $this->assertInstanceOf(get_class($this->data), $return);
             $this->assertSame('food', $output['id']);
 
@@ -490,14 +613,14 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($this->data->get($object3, 'do'), 'do');
     }
 
-    protected function getWriteMethods()
-    {
-        return array('set', 'fill', 'ensure');
-    }
-
     public function setUp()
     {
         $this->data = new Data();
+    }
+
+    protected function getWriteMethods()
+    {
+        return array('set', 'fill', 'ensure');
     }
 }
 

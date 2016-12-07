@@ -18,14 +18,26 @@ class Data implements DataInterface
      * @var array
      */
     protected $cache = array(
-        'set'        => array(),
-        'get'        => array(),
-        'validate'   => array(),
-        'carry'      => null,
-        'carryIsSet' => false,
-        'abort'      => false,
+        'set'      => array(),
+        'get'      => array(),
+        'validate' => array(),
+        'carry'    => array(
+            'value' => null,
+            'path'  => null,
+            'set'   => false,
+            'abort' => false,
+        ),
     );
 
+    protected $defaults = array();
+
+    /**
+     * Data constructor.
+     */
+    public function __construct()
+    {
+        $this->defaults = $this->cache;
+    }
 
     /**
      * @inheritdoc
@@ -35,6 +47,29 @@ class Data implements DataInterface
         return $this->get($subject, $path, $defaultValue, function ($value, $default) {
             return is_null($value) ? $default : intval($value);
         });
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getThen($subject, $path, $defaultValue = null, $valueCallback = null)
+    {
+        $value = $this->get($subject, $path, $defaultValue, $valueCallback);
+        $this->setCarry($path, $value);
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function value()
+    {
+        $value = null;
+        $path = null;
+        $this->useCarry($path, $value);
+
+        return $value;
     }
 
     /**
@@ -83,18 +118,14 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function set(&$subject, $path, $value = null, $childTemplate = null)
+    public function set(&$subject, $path = null, $value = null, $childTemplate = null)
     {
-        if (func_num_args() < 3 && !$this->cache['carryIsSet']) {
-            throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
-        }
-
-        $this->useCarryValue($value);
-
-        if ($this->cache['abort']) {
+        if ($this->cache['carry']['abort']) {
             return $this;
         }
 
+        $this->writeArgHandler(func_num_args());
+        $this->useCarry($path, $value);
         $this->cacheSet(__FUNCTION__, $subject, $path, $value, $childTemplate);
         $this->validate($subject, $path);
 
@@ -135,13 +166,13 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function ensure(&$subject, $path, $default = null, $childTemplate = null)
+    public function ensure(&$subject, $path = null, $default = null, $childTemplate = null)
     {
-        if (func_num_args() < 3 && !$this->cache['carryIsSet']) {
-            throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+        if ($this->cache['carry']['abort']) {
+            return $this;
         }
-
-        $this->useCarryValue($default);
+        $this->writeArgHandler(func_num_args());
+        $this->useCarry($path, $default);
 
         $value = $this->get($subject, $path, $default);
         $this->set($subject, $path, $value, $childTemplate);
@@ -152,13 +183,13 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function fill(&$subject, $path, $value = null, $test = null, $childTemplate = null)
+    public function fill(&$subject, $path = null, $value = null, $test = null, $childTemplate = null)
     {
-        if (func_num_args() < 3 && !$this->cache['carryIsSet']) {
-            throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+        if ($this->cache['carry']['abort']) {
+            return $this;
         }
-
-        $this->useCarryValue($value);
+        $this->writeArgHandler(func_num_args());
+        $this->useCarry($path, $value);
 
         // Figure out what an empty value is based on type of $value or on $childTemplate.
         if (is_null($childTemplate)) {
@@ -241,22 +272,84 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function onlyIf($subject, $path, $defaultValue = null, $valueCallback = null)
+    public function onlyIf($subject, $path, $test = null)
     {
-        $this->cache['carry'] = $this->get($subject, $path, $defaultValue, $valueCallback);
-        $this->cache['carryIsSet'] = true;
-        $this->cache['abort'] = empty($this->cache['carry']);
+        $value = $this->get($subject, $path);
+        $this->setCarry($path, $value);
+
+        if (is_null($test)) {
+
+            // TODO Expand like fill has?
+            $test = function ($value) {
+                return !empty($value);
+            };
+        }
+        $this->cache['carry']['abort'] = !$test($value);
 
         return $this;
     }
 
-    protected function useCarryValue(&$value)
+    /**
+     * @inheritdoc
+     */
+    public function call($function_name)
     {
-        if ($this->cache['carryIsSet']) {
-            $value = $this->cache['carry'];
-            $this->cache['carry'] = null;
-            $this->cache['carryIsSet'] = false;
+        if (!function_exists($function_name)) {
+            throw new \InvalidArgumentException("Invalid function called $function_name");
         }
+
+        $value = $path = null;
+        $this->useCarry($path, $value);
+        $this->setCarry($path, $function_name($value));
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function filter($filter, $options = null)
+    {
+        $value = null;
+        $path = null;
+        $this->useCarry($path, $value);
+        $value = filter_var($value, $filter, $options);
+        $this->setCarry($path, $value);
+
+        return $this;
+    }
+
+    protected function writeArgHandler($numArguments)
+    {
+        if ($numArguments < 2 && !$this->cache['carry']['set']) {
+            throw new \InvalidArgumentException("Missing argument 2 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+        }
+        elseif ($numArguments < 3 && !$this->cache['carry']['set']) {
+            throw new \InvalidArgumentException("Missing argument 3 for " . __CLASS__ . '::' . __FUNCTION__ . '(), called in ' . __FILE__ . ' on line ' . __LINE__);
+        }
+    }
+
+    /**
+     * Sets the value of $path and $value, only if null, using carry values.
+     * &
+     *
+     * @param &$path
+     * @param &$value
+     */
+    protected function useCarry(&$path, &$value)
+    {
+        if ($this->cache['carry']['set'] && !$this->cache['carry']['abort']) {
+            $path = is_null($path) ? $this->cache['carry']['path'] : $path;
+            $value = is_null($value) ? $this->cache['carry']['value'] : $value;
+            $this->cache['carry'] = $this->defaults['carry'];
+        }
+    }
+
+    protected function setCarry($path, $value)
+    {
+        $this->cache['carry']['path'] = $path;
+        $this->cache['carry']['value'] = $value;
+        $this->cache['carry']['set'] = true;
     }
 
     /**
