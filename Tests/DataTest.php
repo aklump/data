@@ -8,6 +8,182 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    /**
+     * Provides data for testGetCallbackExists.
+     */
+    function DataForTestGetCallbackExistsProvider() {
+      $tests = array();
+      $tests[] = array('do', array('re' => 'me'), true);
+      $tests[] = array('do.re', 'me', true);
+      $tests[] = array('do.re.me', -1, false);
+
+      return $tests;
+    }
+
+    /**
+     * @dataProvider DataForTestGetCallbackExistsProvider
+     */
+    public function testGetCallbackExists($path, $controlValue, $shouldExist)
+    {
+        $subject = array('do' => array('re' => 'me'));
+        $data = null;
+        $this->data->get($subject, $path, -1, function($value, $default, $exists) use (&$data) {
+            $data = func_get_args();
+        });
+        $this->assertSame($controlValue, $data[0]);
+        $this->assertSame(-1, $data[1]);
+        $this->assertSame($shouldExist, $data[2]);
+    }
+
+    /**
+     * Provides data for testWhenPathExtendsThroughAString.
+     */
+    function DataForTestWhenPathExtendsThroughAStringProvider()
+    {
+        $tests = array();
+        $tests[] = array(null);
+        $tests[] = array(123);
+        $tests[] = array('tired');
+        $tests[] = array(37.6);
+
+        return $tests;
+    }
+
+    /**
+     * @dataProvider DataForTestWhenPathExtendsThroughAStringProvider
+     */
+    public function testWhenPathExtendsThroughAString($base)
+    {
+        $subject = array('kingdom' => array('phylum' => $base));
+        $path = 'kingdom.phylum.class';
+        $this->assertNull($this->data->get($subject, $path));
+    }
+
+    /**
+     * Provides data for testGetExists.
+     */
+    function DataForTestGetExistsProvider()
+    {
+        $tests = array();
+        $tests[] = array(
+            array('kingdom' => array('phylum' => array('class' => 'rodentia'))),
+            'kingdom.phylum.class.order',
+            'none',
+            function ($value) {
+                return strtoupper($value);
+            },
+            array(false, 'NONE'),
+        );
+        $tests[] = array(
+            array('kingdom' => array('phylum' => (object) array('class' => 'rodentia'))),
+            'kingdom.phylum.class',
+            'none',
+            function ($value) {
+                return strtoupper($value);
+            },
+            array(true, 'RODENTIA'),
+        );
+        $tests[] = array(
+            array('page' => 23),
+            'page',
+            1,
+            null,
+            array(true, 23),
+        );
+        $tests[] = array(
+            array('chapter' => 23),
+            'page',
+            1,
+            null,
+            array(false, 1),
+        );
+        $tests[] = array(
+            array('chapter' => 23),
+            'page',
+            1,
+            function ($value) {
+                return 'the end';
+            },
+            array(false, 'the end'),
+        );
+
+
+        return $tests;
+    }
+
+    /**
+     * @dataProvider DataForTestGetExistsProvider
+     */
+    public function testGetExists($subject, $path, $default, $callback, $control)
+    {
+        $reflector = new \ReflectionClass(get_class($this->data));
+        $method = $reflector->getMethod('getExists');
+        $method->setAccessible('public');
+
+        $subjects = array(
+            $subject,
+            (object) $subject,
+        );
+
+        foreach ($subjects as $subject) {
+            $result = $method->invokeArgs($this->data, array(
+                $subject,
+                $path,
+                $default,
+                $callback,
+            ));
+            $this->assertSame($control, $result);
+        }
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testOnlyIfHasIntValThrows()
+    {
+        $data = array('favorite' => array('drink' => 99));
+        $this->data->onlyIfHas($data, 'favorite.drink')
+                   ->call('intval')
+                   ->call(function ($value) {
+                       if ($value) {
+                           throw new \InvalidArgumentException("favorite must be 0 or 1");
+                       }
+                   });
+    }
+
+    /**
+     * @expectedException RuntimeException
+     */
+    public function testOnlyIfNullThrowsWhenNotNull()
+    {
+        $data = array();
+        $this->data->onlyIfNull($data, 'id')->call(function () {
+            throw new \RuntimeException("Id is required");
+        });
+    }
+
+    public function testOnlyIfNotNull()
+    {
+        $data = array('bush' => true);
+        $value = $this->data->onlyIfNull($data, 'tree')
+                            ->call('intval')
+                            ->value();
+        $this->assertSame(0, $value);
+        $value = $this->data->onlyIfNull($data, 'bush')
+                            ->call('intval')
+                            ->value();
+        $this->assertNull($value);
+    }
+
+    public function testOnlyIfHas()
+    {
+        $data = array('bush' => true);
+        $value = $this->data->onlyIfHas($data, 'tree')->call('intval')->value();
+        $this->assertNull($value);
+        $value = $this->data->onlyIfHas($data, 'bush')->call('intval')->value();
+        $this->assertSame(1, $value);
+    }
+
     public function testTransformCallable()
     {
         $from = array('being' => 'dog');

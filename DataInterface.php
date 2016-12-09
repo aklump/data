@@ -15,7 +15,11 @@ interface DataInterface
      * @param Callable     $valueCallback Defaults to null. Optional callback
      *                                    if the value does not match
      *                                    $defaultValue, receives the
-     *                                    arguments: $value, $defaultValue.
+     *                                    arguments: $value, $defaultValue,
+     *                                    $pathExists.  $pathExists will be
+     *                                    false if the $defaultValue was used;
+     *                                    true if the value came from the
+     *                                    $path.
      *
      * @return mixed
      *
@@ -148,10 +152,11 @@ interface DataInterface
      *      array_key_exists() or property_exists.
      *
      * callable:
-     *      You may pass a callable, which receives ($currentValue, $value,
-     *      $exists) must also return true to affect a replacement.
-     *      $currentValue is based on $subject and $path.  $exists will be true
-     *      if the final key or property of the path exists.
+     *      You may pass a callable, which receives ($oldValue, $pathExists,
+     *      $newValue) must also return true to affect a replacement.
+     *      $oldValue is based on $subject and $path.  $pathExists will be true
+     *      if the final key or property of the $path exists.  $newValue is the
+     *      value that will replace $oldValue, if $test passes.
      *
      * @param array|object $subject The base subject.
      * @param string       $path
@@ -184,6 +189,30 @@ interface DataInterface
      */
     public function onlyIf($subject, $path, $test = null);
 
+    /**
+     * Conditional tests for null value when chaining.
+     *
+     * Only carries the value if the value at $path is not null.
+     *
+     * @param $subject
+     * @param $path
+     *
+     * @return $this
+     */
+    public function onlyIfNull($subject, $path);
+
+
+    /**
+     * Conditional tests for the existence of path when chaining.
+     *
+     * Only carries the value if the $path exists.
+     *
+     * @param $subject
+     * @param $path
+     *
+     * @return $this
+     */
+    public function onlyIfHas($subject, $path);
 
     /**
      * Call a function with carry value.

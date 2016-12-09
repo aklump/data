@@ -80,20 +80,29 @@ class Data implements DataInterface
         $this->cacheSet(__FUNCTION__, $subject, $path, $defaultValue, $valueCallback);
 
         if (empty($subject)) {
-            return $this->postGet($defaultValue, $defaultValue, $valueCallback);
+            return $this->postGet($defaultValue, $defaultValue, $valueCallback, false);
         }
 
         $this->validate($subject, $path);
         $key = array_shift($path);
         $base = $subject;
+        $pathExists = false;
 
         if (is_array($base)) {
-            $base = isset($base[$key]) ? $base[$key] : $defaultValue;
+            if (isset($base[$key])) {
+                $base = $base[$key];
+                $pathExists = true;
+            }
+            else {
+                $base = $defaultValue;
+                $pathExists = false;
+            }
         }
         elseif (is_object($base)) {
             $base = clone $base;
             if (isset($base->{$key})) {
                 $base = $base->{$key};
+                $pathExists = true;
             }
             else {
                 $processed = false;
@@ -104,11 +113,23 @@ class Data implements DataInterface
                         break;
                     }
                 }
-                $base = $processed ? $base : $defaultValue;
+                if ($processed) {
+                    $pathExists = true;
+                }
+                else {
+                    $pathExists = false;
+                    $base = $defaultValue;
+                }
             }
         }
+        elseif (is_scalar($base)) {
+            // If we don't have an object or an array we have to stop traversing.
+            $path = array();
+            $pathExists = false;
+            $base = $defaultValue;
+        }
         if (count($path) === 0) {
-            return $this->postGet($base, $defaultValue, $valueCallback);
+            return $this->postGet($base, $defaultValue, $valueCallback, $pathExists);
         }
         $function = __FUNCTION__;
 
@@ -191,42 +212,43 @@ class Data implements DataInterface
         $this->writeArgHandler(func_num_args());
         $this->useCarry($path, $value);
 
-        // Figure out what an empty value is based on type of $value or on $childTemplate.
-        if (is_null($childTemplate)) {
-            $type = gettype($value);
-            $empty = null;
-            settype($empty, $type);
-        }
-        else {
-            $empty = $childTemplate;
-        }
-
         // Our default test is based on variable type.
         $test = is_null($test) ? 'empty' : $test;
+
+        // Figure out what the default value is based on type of $value or on $childTemplate.
+        if (is_null($childTemplate)) {
+            $default = null;
+            settype($default, gettype($value));
+        }
+        else {
+            $default = $childTemplate;
+        }
+
+        list ($pathExists, $oldValue) = $this->getExists($subject, $path, $default);
 
         // Basic language constructs
         if (is_string($test)) {
             switch ($test) {
                 case 'empty':
-                    $test = function ($current) {
-                        return empty($current);
+                    $test = function ($oldValue) {
+                        return empty($oldValue);
                     };
                     break;
                 case 'is_null':
-                    $test = function ($current) {
-                        return is_null($current);
+                    $test = function ($oldValue) {
+                        return is_null($oldValue);
                     };
                     break;
                 // empty plus type comparison
                 case 'strict':
-                    $test = function ($current) use ($empty) {
-                        return $current === $empty;
+                    $test = function ($oldValue) use ($default) {
+                        return $oldValue === $default;
                     };
                     break;
                 // Custom 'array_key_exists', 'property_exists'
                 case 'not_exists':
-                    $test = function ($current, $exists, $value) {
-                        return !$exists;
+                    $test = function ($oldValue, $pathExists, $value) {
+                        return !$pathExists;
                     };
                     break;
             }
@@ -236,33 +258,7 @@ class Data implements DataInterface
             throw new \InvalidArgumentException("\$test must be a callable, null or predefined string.");
         }
 
-        $ancestry = $path;
-        $key = $this->pathPop($ancestry);
-        if (empty($ancestry)) {
-            $parent = $subject;
-        }
-        else {
-            $type = gettype($subject);
-            $empty_subject = null;
-            settype($empty_subject, $type);
-            $parent = $this->get($subject, $ancestry, $empty_subject);
-        }
-
-        // Determine if the path exists or not.
-        $exists = false;
-        if (is_array($parent) && array_key_exists($key, $parent)) {
-            $exists = true;
-            $current = $parent[$key];
-        }
-        elseif (is_object($parent) && property_exists($parent, $key)) {
-            $exists = true;
-            $current = $parent->{$key};
-        }
-        else {
-            $current = $this->get($subject, $path, $empty);
-        }
-
-        if ($test($current, $exists, $value)) {
+        if ($test($oldValue, $pathExists, $value)) {
             $this->set($subject, $path, $value, $childTemplate);
         }
 
@@ -274,17 +270,38 @@ class Data implements DataInterface
      */
     public function onlyIf($subject, $path, $test = null)
     {
-        $value = $this->get($subject, $path);
-        $this->setCarry($path, $value);
 
+        // Default test is !empty().
         if (is_null($test)) {
-
-            // TODO Expand like fill has?
             $test = function ($value) {
                 return !empty($value);
             };
         }
-        $this->cache['carry']['abort'] = !$test($value);
+
+        list($pathExists, $value) = $this->getExists($subject, $path);
+        $this->setCarry($path, $value);
+        $this->cache['carry']['abort'] = !$test($value, $pathExists);
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function onlyIfNull($subject, $path)
+    {
+        return $this->onlyIf($subject, $path, function ($value) {
+            return is_null($value);
+        });
+    }
+
+    public function onlyIfHas($subject, $path)
+    {
+        list($exists, $value) = $this->getExists($subject, $path);
+        $this->cache['carry']['abort'] = !$exists;
+        if ($exists) {
+            $this->setCarry($path, $value);
+        }
 
         return $this;
     }
@@ -321,6 +338,55 @@ class Data implements DataInterface
         $this->setCarry($path, $value);
 
         return $this;
+    }
+
+    /**
+     * Returns a flag if the path exists and the value at $path.
+     *
+     * @param      $subject
+     * @param      $path
+     * @param null $defaultValue
+     * @param null $valueCallback
+     *
+     * @return array - 0 bool If the path exists or not
+     * - 0 bool If the path exists or not
+     * - 1 mixed The value at path if it exists or $defaultValue
+     */
+    protected function getExists($subject, $path, $defaultValue = null, $valueCallback = null)
+    {
+
+        // TODO Can this be refactored now with the get() callback?
+
+        $ancestry = $path;
+        $key = $this->pathPop($ancestry);
+        if (empty($ancestry)) {
+            $parent = $subject;
+        }
+        else {
+            $empty_subject = null;
+            settype($empty_subject, gettype($subject));
+            $parent = $this->get($subject, $ancestry, $empty_subject);
+        }
+
+        // Determine if the path exists or not.
+        $pathExists = false;
+        if (is_array($parent) && array_key_exists($key, $parent)) {
+            $pathExists = true;
+            $currentValue = $parent[$key];
+        }
+        elseif (is_object($parent) && property_exists($parent, $key)) {
+            $pathExists = true;
+            $currentValue = $parent->{$key};
+        }
+        else {
+            $currentValue = $this->get($subject, $path, $defaultValue);
+        }
+
+        if (is_callable($valueCallback)) {
+            $currentValue = $valueCallback($currentValue);
+        }
+
+        return array($pathExists, $currentValue);
     }
 
     protected function writeArgHandler($numArguments)
@@ -390,10 +456,10 @@ class Data implements DataInterface
      *
      * @return mixed
      */
-    protected function postGet($value, $defaultValue, $valueCallback)
+    protected function postGet($value, $defaultValue, $valueCallback, $pathExists)
     {
         if (is_callable($valueCallback)) {
-            $value = $valueCallback($value, $defaultValue);
+            $value = $valueCallback($value, $defaultValue, $pathExists);
         }
         $this->cacheClear('get', 'validate');
 
