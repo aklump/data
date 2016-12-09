@@ -8,9 +8,9 @@
     ],
     "sections": [
         {
-            "id": "chaining",
+            "id": "conditionals",
             "title": "Conditionals",
-            "file": "chaining.md",
+            "file": "conditionals.md",
             "sort": 50
         },
         {

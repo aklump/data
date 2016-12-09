@@ -279,8 +279,9 @@ class Data implements DataInterface
         }
 
         list($pathExists, $value) = $this->getExists($subject, $path);
-        $this->setCarry($path, $value);
-        $this->cache['carry']['abort'] = !$test($value, $pathExists);
+        if (!($this->cache['carry']['abort'] = !$test($value, $pathExists))) {
+            $this->setCarry($path, $value);
+        }
 
         return $this;
     }
@@ -311,6 +312,10 @@ class Data implements DataInterface
      */
     public function call($function_name)
     {
+        if ($this->cache['carry']['abort']) {
+            return $this;
+        }
+
         $value = $path = null;
         $this->useCarry($path, $value);
 
@@ -331,6 +336,10 @@ class Data implements DataInterface
      */
     public function filter($filter, $options = null)
     {
+        if ($this->cache['carry']['abort']) {
+            return $this;
+        }
+
         $value = null;
         $path = null;
         $this->useCarry($path, $value);
@@ -400,15 +409,14 @@ class Data implements DataInterface
     }
 
     /**
-     * Sets the value of $path and $value, only if null, using carry values.
-     * &
+     * Overwrites the value of $path and $value, only if null, using carry values if they exist.
      *
      * @param &$path
      * @param &$value
      */
     protected function useCarry(&$path, &$value)
     {
-        if ($this->cache['carry']['set'] && !$this->cache['carry']['abort']) {
+        if ($this->cache['carry']['set']) {
             $path = is_null($path) ? $this->cache['carry']['path'] : $path;
             $value = is_null($value) ? $this->cache['carry']['value'] : $value;
             $this->cache['carry'] = $this->defaults['carry'];

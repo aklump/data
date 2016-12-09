@@ -9,15 +9,147 @@ class DataTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
+     * Provides data for testGetExample.
+     */
+    function DataForTestGetExampleProvider()
+    {
+        $tests = array();
+        $tests[] = array(
+            array('page' => '2'),
+            false,
+            2,
+        );
+        $tests[] = array(
+            array(),
+            false,
+            null,
+        );
+        $tests[] = array(
+            array('page' => 2),
+            false,
+            2,
+        );
+        $tests[] = array(
+            array('page' => 25),
+            true,
+        );
+
+        return $tests;
+    }
+
+    /**
+     * @dataProvider DataForTestGetExampleProvider
+     */
+    public function testGetExample($get, $shouldThrow, $control = null)
+    {
+        $thrown = false;
+        $totalPages = 10;
+        try {
+            $page = $this->data->onlyIfHas($get, 'page')
+                               ->call('intval')
+                               ->call(function ($page) use ($totalPages) {
+                                   if ($page < 1 || $page > $totalPages) {
+                                       throw new \InvalidArgumentException("Page number is invalid.");
+                                   }
+
+                                   return $page;
+                               })
+                               ->value();
+        } catch (\Exception $exception) {
+            $thrown = true;
+            $control = null;
+        }
+        if ($shouldThrow) {
+            $this->assertSame($shouldThrow, $thrown);
+            $this->assertArrayNotHasKey('page', get_defined_vars());
+        }
+        else {
+            $this->assertSame($control, $page);
+        }
+    }
+
+    /**
+     * Provides data for
+     * testEnsureCallAfterFailedConditionalNeverFires.
+     */
+    function DataForTestAfterFailedConditionalNeverFiresProvider()
+    {
+        $tests = array();
+        $tests[] = array(
+            'onlyIf',
+            array(),
+            false,
+        );
+        $tests[] = array(
+            'onlyIfHas',
+            array(),
+            false,
+        );
+        $tests[] = array(
+            'onlyIfNull',
+            array('alpha' => 1),
+            false,
+        );
+        $tests[] = array(
+            'onlyIf',
+            array('alpha' => 1),
+            true,
+        );
+        $tests[] = array(
+            'onlyIfHas',
+            array('alpha' => null),
+            true,
+        );
+        $tests[] = array(
+            'onlyIfNull',
+            array('alpha' => null),
+            true,
+        );
+
+        return $tests;
+    }
+
+    /**
+     * @dataProvider DataForTestAfterFailedConditionalNeverFiresProvider
+     */
+    public function testEnsureFilterAfterFailedConditionalNeverFires($method, $subject, $control)
+    {
+        $fired = $this->data->{$method}($subject, 'alpha')
+                            ->filter(FILTER_CALLBACK, array(
+                                'options' => function () {
+                                    return true;
+                                },
+                            ))->value();
+        $fired = is_null($fired) ? false : true;
+
+        $this->assertSame($control, $fired);
+    }
+
+    /**
+     * @dataProvider DataForTestAfterFailedConditionalNeverFiresProvider
+     */
+    public function testEnsureCallAfterFailedConditionalNeverFires($method, $subject, $control)
+    {
+        $fired = false;
+        $this->data->{$method}($subject, 'alpha')
+                   ->call(function () use (&$fired) {
+                       $fired = true;
+                   });
+
+        $this->assertSame($control, $fired);
+    }
+
+    /**
      * Provides data for testGetCallbackExists.
      */
-    function DataForTestGetCallbackExistsProvider() {
-      $tests = array();
-      $tests[] = array('do', array('re' => 'me'), true);
-      $tests[] = array('do.re', 'me', true);
-      $tests[] = array('do.re.me', -1, false);
+    function DataForTestGetCallbackExistsProvider()
+    {
+        $tests = array();
+        $tests[] = array('do', array('re' => 'me'), true);
+        $tests[] = array('do.re', 'me', true);
+        $tests[] = array('do.re.me', -1, false);
 
-      return $tests;
+        return $tests;
     }
 
     /**
@@ -27,7 +159,7 @@ class DataTest extends \PHPUnit_Framework_TestCase
     {
         $subject = array('do' => array('re' => 'me'));
         $data = null;
-        $this->data->get($subject, $path, -1, function($value, $default, $exists) use (&$data) {
+        $this->data->get($subject, $path, -1, function ($value, $default, $exists) use (&$data) {
             $data = func_get_args();
         });
         $this->assertSame($controlValue, $data[0]);
@@ -255,6 +387,21 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $to = array();
         $this->data->onlyIf($from, 'id')->set($to, 'account.id');
         $this->assertSame('123', $to['account']['id']);
+
+        $word = array('flying' => 'bird');
+        $plural = $this->data->onlyIf($word, 'flying')->call(function ($value) {
+            return $value . 's';
+        })->value();
+        $this->assertSame('birds', $plural);
+
+        $word = array('flying' => 'bird');
+        $plural = $this->data->onlyIf($word, 'creeping')
+                             ->call(function ($value) {
+                                 return $value . 's';
+                             })
+                             ->value();
+        $this->assertNull($plural);
+
     }
 
     public function testOnlyIfNoPathNoValue()
@@ -834,6 +981,16 @@ class DataTest extends \PHPUnit_Framework_TestCase
     protected function getWriteMethods()
     {
         return array('set', 'fill', 'ensure');
+    }
+
+    protected function getTransformMethods()
+    {
+        return array('call', 'filter');
+    }
+
+    protected function getConditionalMethods()
+    {
+        return array('onlyIf', 'onlyIfNull', 'onlyIfHas');
     }
 }
 
