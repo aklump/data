@@ -310,7 +310,7 @@ class Data implements DataInterface
     /**
      * @inheritdoc
      */
-    public function call($function_name)
+    public function call($callable)
     {
         if ($this->cache['carry']['abort']) {
             return $this;
@@ -319,11 +319,14 @@ class Data implements DataInterface
         $value = $path = null;
         $this->useCarry($path, $value);
 
-        if (is_callable($function_name)) {
-            $value = $function_name($value);
+        if (is_callable($callable)) {
+            $args = func_get_args();
+            array_shift($args);
+            array_unshift($args, $value);
+            $value = call_user_func_array($callable, $args);
         }
         else {
-            throw new \InvalidArgumentException("Invalid function called $function_name");
+            throw new \InvalidArgumentException("Invalid function called $callable");
         }
 
         $this->setCarry($path, $value);
@@ -409,7 +412,8 @@ class Data implements DataInterface
     }
 
     /**
-     * Overwrites the value of $path and $value, only if null, using carry values if they exist.
+     * Overwrites the value of $path and $value, only if null, using carry
+     * values if they exist.
      *
      * @param &$path
      * @param &$value

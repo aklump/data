@@ -8,6 +8,38 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testCallMethodWithArgumentsStaticClassString()
+    {
+        $data = array('nid' => '123');
+        $result = $this->data->onlyIf($data, 'nid')
+                             ->call('AKlump\Data\CallTestObject::csv', 'do', 're', 'mi')
+                             ->value();
+        $this->assertSame('123,do,re,mi', $result);
+    }
+
+    public function testCallMethodWithArgumentsStaticClassAsArray()
+    {
+        $data = array('nid' => '123');
+        $result = $this->data->onlyIf($data, 'nid')
+                             ->call(array(
+                                 'AKlump\Data\CallTestObject',
+                                 'csv',
+                             ), 'do', 're', 'mi')
+                             ->value();
+        $this->assertSame('123,do,re,mi', $result);
+    }
+
+    public function testCallMethodWithArguments()
+    {
+        $data = array('nid' => '123');
+        $result = $this->data->onlyIf($data, 'nid')->call(function ($value) {
+            $value = func_get_args();
+
+            return $value;
+        }, 'do', 're', 'mi')->value();
+        $this->assertSame(array('123', 'do', 're', 'mi'), $result);
+    }
+
     /**
      * Provides data for testGetExample.
      */
@@ -994,3 +1026,10 @@ class DataTest extends \PHPUnit_Framework_TestCase
     }
 }
 
+class CallTestObject
+{
+    public static function csv()
+    {
+        return implode(',', func_get_args());
+    }
+}

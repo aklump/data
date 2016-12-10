@@ -37,3 +37,20 @@ This example will assign it to a different key:
         ->set($from);
         
     // $from['being'] === 'god';
+
+## Transform with arguments
+Additional arguments to `call()` will be sent to the [callable as arguments](http://php.net/manual/en/language.types.callable.php).  This is the same as `call_user_func_array()` which is used under the hood.
+
+    class MyClass
+    {
+        public static function Concat()
+        {
+            return implode('.', func_get_args());
+        }
+    }
+    ...
+    $result = $obj->onlyIf($data, 'id')
+                  ->call('MyClass::Concat', 'do', 're', 'mi')
+                  ->value();
+    
+    // $result === 'id.do.re.mi';
