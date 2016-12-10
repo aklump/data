@@ -54,6 +54,7 @@ class Data implements DataInterface
      */
     public function getThen($subject, $path, $defaultValue = null, $valueCallback = null)
     {
+        $this->cache['carry']['abort'] = null;
         $value = $this->get($subject, $path, $defaultValue, $valueCallback);
         $this->setCarry($path, $value);
 

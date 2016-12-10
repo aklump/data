@@ -8,6 +8,18 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testFailedConditionalFollowedByGetThenSetWorksAsExpected()
+    {
+        $item = array('id' => '123');
+        $this->data->onlyIf($item, 'nokey');
+        // Now make sure the abort does not carry over...
+
+        $this->data->getThen($item, 'id', null, function ($id) {
+            return intval($id);
+        })->set($item, 'modified');
+        $this->assertSame(123, $item['modified']);
+    }
+
     public function testCallMethodWithArgumentsStaticClassString()
     {
         $data = array('nid' => '123');
