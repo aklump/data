@@ -76,6 +76,25 @@ $obj-&gt;getThen($from, 'being')
 
 // $from['being'] === 'god';
 </code></pre>
+
+<h2>Transform with arguments</h2>
+
+<p>Additional arguments to <code>call()</code> will be sent to the <a href="http://php.net/manual/en/language.types.callable.php">callable as arguments</a>.  This is the same as <code>call_user_func_array()</code> which is used under the hood.</p>
+
+<pre><code>class MyClass
+{
+    public static function Concat()
+    {
+        return implode('.', func_get_args());
+    }
+}
+...
+$result = $obj-&gt;onlyIf($data, 'id')
+              -&gt;call('MyClass::Concat', 'do', 're', 'mi')
+              -&gt;value();
+
+// $result === 'id.do.re.mi';
+</code></pre>
 </section>
 
 <div class="search__results">
@@ -91,7 +110,7 @@ $obj-&gt;getThen($from, 'being')
 
 
   <div id="footer-legaleeze">
-    <p class="legaleeze center">Version: 0.0.21 &bull; Last Updated: Fri, 09 Dec 2016 11:17:35 -0800</p>
+    <p class="legaleeze center">Version: 0.0.22 &bull; Last Updated: Sat, 10 Dec 2016 13:05:28 -0800</p>
   </div>
 </footer>
 
