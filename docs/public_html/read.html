@@ -68,9 +68,17 @@ $obj = new Data;
 
 <h2>Example Three: Transformation Callbacks</h2>
 
+<p>The callback receives three arguments:</p>
+
+<ol>
+<li>The computed value; this will be the default if the path doesn't exist.</li>
+<li>The original default value.</li>
+<li><code>true</code> if the path existed; a.k.a. <code>true</code> if the default is NOT being used.</li>
+</ol>
+
 <p>Transformation to integer.  Notice that the transformation callback can do anything to the value you want.  It just happens to convert to integer in this example.</p>
 
-<pre><code>$result = $obj-&gt;get($data, 'id', null, function ($value, $default) {
+<pre><code>$result = $obj-&gt;get($data, 'id', null, function ($value, $default, $exists) {
     return $value ? intval($value) : $default;
 });
 
@@ -121,7 +129,7 @@ $obj = new Data;
 
 
   <div id="footer-legaleeze">
-    <p class="legaleeze center">Version: 0.0.23 &bull; Last Updated: Sat, 10 Dec 2016 14:17:25 -0800</p>
+    <p class="legaleeze center">Version: 0.0.24 &bull; Last Updated: Wed, 14 Dec 2016 10:04:30 -0800</p>
   </div>
 </footer>
 
