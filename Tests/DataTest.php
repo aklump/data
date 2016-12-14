@@ -8,6 +8,16 @@ namespace AKlump\Data;
 class DataTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function testDefaultGoesToValueCallbackAsValue()
+    {
+        $item = array();
+        $received = array();
+        $this->data->get($item, 'do', 're', function ($value, $default, $exists) use (&$received) {
+            $received = func_get_args();
+        });
+        $this->assertSame(array('re', 're', false), $received);
+    }
+
     public function testFailedConditionalFollowedByGetThenSetWorksAsExpected()
     {
         $item = array('id' => '123');

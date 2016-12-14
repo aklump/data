@@ -29,9 +29,15 @@ Simple. With Default. Data not present.
 
 ## Example Three: Transformation Callbacks
 
+The callback receives three arguments:
+
+1. The computed value; this will be the default if the path doesn't exist.
+1. The original default value.
+1. `true` if the path existed; a.k.a. `true` if the default is NOT being used.
+
 Transformation to integer.  Notice that the transformation callback can do anything to the value you want.  It just happens to convert to integer in this example.
 
-    $result = $obj->get($data, 'id', null, function ($value, $default) {
+    $result = $obj->get($data, 'id', null, function ($value, $default, $exists) {
         return $value ? intval($value) : $default;
     });
     
