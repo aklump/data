@@ -7,6 +7,16 @@ namespace AKlump\Data;
  */
 class DataTest extends \PHPUnit_Framework_TestCase
 {
+    public function testOnlyIfSetFillDoesntHaveAbort()
+    {
+        $g = $this->data;
+        $vars = array('name' => false, 'image_src' => '');
+        $g->onlyIf($vars, 'name', function ($value) {
+            return $value !== false;
+        })->set($vars, 'name', 'bob');
+        $g->fill($vars, 'image_src', 'dog', 'empty');
+        $this->assertSame('dog', $vars['image_src']);
+    }
 
     public function testDefaultGoesToValueCallbackAsValue()
     {

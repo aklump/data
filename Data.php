@@ -143,7 +143,7 @@ class Data implements DataInterface
     public function set(&$subject, $path = null, $value = null, $childTemplate = null)
     {
         if ($this->cache['carry']['abort']) {
-            return $this;
+            return $this->resetChain();
         }
 
         $this->writeArgHandler(func_num_args());
@@ -177,9 +177,7 @@ class Data implements DataInterface
         if (empty($path)) {
             $next = $value;
 
-            $this->cacheClear('set', 'validate');
-
-            return $this;
+            return $this->resetChain();
         }
 
         return $this->set($next, $path, $value, $childTemplate);
@@ -191,7 +189,7 @@ class Data implements DataInterface
     public function ensure(&$subject, $path = null, $default = null, $childTemplate = null)
     {
         if ($this->cache['carry']['abort']) {
-            return $this;
+            return $this->resetChain();
         }
         $this->writeArgHandler(func_num_args());
         $this->useCarry($path, $default);
@@ -208,7 +206,7 @@ class Data implements DataInterface
     public function fill(&$subject, $path = null, $value = null, $test = null, $childTemplate = null)
     {
         if ($this->cache['carry']['abort']) {
-            return $this;
+            return $this->resetChain();
         }
         $this->writeArgHandler(func_num_args());
         $this->useCarry($path, $value);
@@ -349,6 +347,18 @@ class Data implements DataInterface
         $this->useCarry($path, $value);
         $value = filter_var($value, $filter, $options);
         $this->setCarry($path, $value);
+
+        return $this;
+    }
+
+    /**
+     * Reset internal caching to be ready for a new chaining.
+     *
+     * @return $this
+     */
+    protected function resetChain()
+    {
+        $this->cache = $this->defaults;
 
         return $this;
     }
