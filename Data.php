@@ -1,9 +1,10 @@
 <?php
+
 namespace AKlump\Data;
 
 
-class Data implements DataInterface
-{
+class Data implements DataInterface {
+
     /**
      * Extend this class and alter the default value of $pathSeparator if want
      * to use a different separator for your path strings.
@@ -18,13 +19,13 @@ class Data implements DataInterface
      * @var array
      */
     protected $cache = array(
-        'set'      => array(),
-        'get'      => array(),
+        'set' => array(),
+        'get' => array(),
         'validate' => array(),
-        'carry'    => array(
+        'carry' => array(
             'value' => null,
-            'path'  => null,
-            'set'   => false,
+            'path' => null,
+            'set' => false,
             'abort' => false,
         ),
     );

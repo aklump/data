@@ -1,8 +1,9 @@
 <?php
+
 namespace AKlump\Data;
 
-interface DataInterface
-{
+interface DataInterface {
+
     /**
      * Gets the value at path of subject. If the resolved value is undefined,
      * the defaultValue is returned in its place.
