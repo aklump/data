@@ -1,12 +1,23 @@
 <?php
+
 namespace AKlump\Data;
 
 /**
  * Class DataTest
+ *
  * @package AKlump\Data
  */
-class DataTest extends \PHPUnit_Framework_TestCase
-{
+class DataTest extends \PHPUnit_Framework_TestCase {
+
+    public function testPathExplode()
+    {
+        $reflector = new \ReflectionClass(get_class($this->data));
+        $method = $reflector->getMethod('pathExplode');
+        $method->setAccessible('public');
+        $result = $method->invokeArgs($this->data, array('do.re.mi'));
+        $this->assertSame(array('do', 're', 'mi'), $result);
+    }
+
     public function testOnlyIfSetFillDoesntHaveAbort()
     {
         $g = $this->data;
@@ -901,7 +912,7 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($this->data, $result);
         $this->assertSame(array(
             '#type' => 'value',
-            'mi'    => 'fa',
+            'mi' => 'fa',
         ), $array['do']['re']);
         $this->assertSame('fa', $array['do']['re']['mi']);
     }
@@ -1058,8 +1069,8 @@ class DataTest extends \PHPUnit_Framework_TestCase
     }
 }
 
-class CallTestObject
-{
+class CallTestObject {
+
     public static function csv()
     {
         return implode(',', func_get_args());

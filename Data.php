@@ -462,6 +462,20 @@ class Data implements DataInterface
         return $return;
     }
 
+    /**
+     * Removes $count elements from $path, right to left
+     *
+     * @param string|array &$path
+     *
+     * @return mixed
+     */
+    protected function pathExplode($path)
+    {
+        $this->validate(__FUNCTION__, $path);
+
+        return $path;
+    }
+
     protected function cacheSet($op)
     {
         $args = func_get_args();
