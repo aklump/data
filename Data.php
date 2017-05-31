@@ -91,7 +91,7 @@ class Data implements DataInterface {
         $pathExists = false;
 
         if (is_array($base)) {
-            if (isset($base[$key])) {
+            if (array_key_exists($key, $base)) {
                 $base = $base[$key];
                 $pathExists = true;
             }
@@ -102,7 +102,7 @@ class Data implements DataInterface {
         }
         elseif (is_object($base)) {
             $base = clone $base;
-            if (isset($base->{$key})) {
+            if (property_exists($base, $key)) {
                 $base = $base->{$key};
                 $pathExists = true;
             }

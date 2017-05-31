@@ -9,6 +9,14 @@ namespace AKlump\Data;
  */
 class DataTest extends \PHPUnit_Framework_TestCase {
 
+    public function testGetArrayKeyNullPassesNullToCallbackWhenDefaultIsZero()
+    {
+        $subject = array('#weight' => null, '#group_weight' => 0);
+        $this->assertSame(null, $this->data->get($subject, '#weight', $subject['#group_weight'], function($value) {
+            return $value;
+        }));
+    }
+
     public function testPathExplode()
     {
         $reflector = new \ReflectionClass(get_class($this->data));
