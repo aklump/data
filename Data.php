@@ -195,7 +195,9 @@ class Data implements DataInterface {
         $this->writeArgHandler(func_num_args());
         $this->useCarry($path, $default);
 
-        $value = $this->get($subject, $path, $default);
+        $value = $this->get($subject, $path, $default, function ($value, $default) {
+            return is_null($value) ? $default : $value;
+        });
         $this->set($subject, $path, $value, $childTemplate);
 
         return $this;

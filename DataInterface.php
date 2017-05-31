@@ -91,7 +91,8 @@ interface DataInterface {
 
     /**
      * Ensure that a variable path exists, by creating a default value at $path
-     * if the $path doesn't already exist.
+     * if the $path doesn't already exist.  BEWARE THAT IF THE PATH EXISTS BUT
+     * THE VALUE IS NULL, THEN THE DEFAULT VALUE WILL BE USED.
      *
      * @param array|object $subject       The base subject.
      * @param string       $path
@@ -100,8 +101,7 @@ interface DataInterface {
      *                                    omitted if a conditional method is
      *                                    chained before this.
      * @param null|mixed   $childTemplate If an child element must be created
-     *                                    to
-     *                                    establish $path, you may pass the
+     *                                    to establish $path, you may pass the
      *                                    default value of a child here.  You
      *                                    may leave this null if your $subject
      *                                    is either an array or a stdClass

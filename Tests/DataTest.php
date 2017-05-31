@@ -9,6 +9,13 @@ namespace AKlump\Data;
  */
 class DataTest extends \PHPUnit_Framework_TestCase {
 
+    public function testEnsureNullWithDefaultArrayReturnsArray()
+    {
+        $subject = array('#attributes' => null);
+        $this->data->ensure($subject, '#attributes', array());
+        $this->assertSame(array(), $subject['#attributes']);
+    }
+
     public function testGetArrayKeyNullPassesNullToCallbackWhenDefaultIsZero()
     {
         $subject = array('#weight' => null, '#group_weight' => 0);
