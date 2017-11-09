@@ -9,6 +9,17 @@ namespace AKlump\Data;
  */
 class DataTest extends \PHPUnit_Framework_TestCase {
 
+    public function testEnsureWorksWithNameWeight()
+    {
+        $form = array();
+        $this->data->ensure($form, 'name.#weight', -10, array());
+        $this->assertSame(array('name' => array('#weight' => -10)), $form);
+
+        $form = array('name' => array());
+        $this->data->ensure($form, 'name.#weight', -10, array());
+        $this->assertSame(array('name' => array('#weight' => -10)), $form);
+    }
+    
     public function testEnsureNullWithDefaultArrayReturnsArray()
     {
         $subject = array('#attributes' => null);
@@ -19,7 +30,7 @@ class DataTest extends \PHPUnit_Framework_TestCase {
     public function testGetArrayKeyNullPassesNullToCallbackWhenDefaultIsZero()
     {
         $subject = array('#weight' => null, '#group_weight' => 0);
-        $this->assertSame(null, $this->data->get($subject, '#weight', $subject['#group_weight'], function($value) {
+        $this->assertSame(null, $this->data->get($subject, '#weight', $subject['#group_weight'], function ($value) {
             return $value;
         }));
     }
