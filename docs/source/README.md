@@ -3,6 +3,24 @@ noindex: true
 ---
 # Data
 
+---
+*************  ABANDONED *************
+
+Suggested replacement:
+- https://packagist.org/packages/dflydev/dot-access-data
+
+```php
+// Setter
+$setter = (new \Dflydev\DotAccessData\Data($multi_array));
+$setter->set('do.re.mi', $value);
+$multi_array = $setter->export();
+
+// Getter
+print (new \Dflydev\DotAccessData\Data($multi_array))
+  ->get('do.re.mi', 'default');
+```
+---
+
 ## Summary
 Provides a common means for getting data from objects or arrays with default option such as Lodash's get method.  Other methods for working with array/object data will be added in time.
 

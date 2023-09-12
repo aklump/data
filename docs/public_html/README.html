@@ -39,6 +39,25 @@
 <section>
 
 
+<hr />
+
+<p>*************  ABANDONED *************</p>
+
+<p>Suggested replacement:
+- https://packagist.org/packages/dflydev/dot-access-data</p>
+
+<pre><code class="php">// Setter
+$setter = (new \Dflydev\DotAccessData\Data($multi_array));
+$setter-&gt;set('do.re.mi', $value);
+$multi_array = $setter-&gt;export();
+
+// Getter
+print (new \Dflydev\DotAccessData\Data($multi_array))
+  -&gt;get('do.re.mi', 'default');
+</code></pre>
+
+<hr />
+
 <h2>Summary</h2>
 
 <p>Provides a common means for getting data from objects or arrays with default option such as Lodash's get method.  Other methods for working with array/object data will be added in time.</p>
@@ -187,7 +206,7 @@ $array === array('do' =&gt; 're');
 
 
   <div id="footer-legaleeze">
-    <p class="legaleeze center">Version: 0.0.28 &bull; Last Updated: Tue, 30 May 2017 18:04:16 -0700</p>
+    <p class="legaleeze center">Version: 0.0.28 &bull; Last Updated: Mon, 11 Sep 2023 17:47:55 -0700</p>
   </div>
 </footer>
 
